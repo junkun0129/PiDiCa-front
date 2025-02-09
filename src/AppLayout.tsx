@@ -1,6 +1,6 @@
 import { Card, Layout, Menu, MenuProps } from "antd";
 import Sider from "antd/es/layout/Sider";
-import { appRoute, appStyle } from "./const";
+import { appRoute, appStyle, COOKIES } from "./const";
 import { Content } from "antd/es/layout/layout";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -17,7 +17,7 @@ const {
 
 const AppLayout = () => {
   const navigate = useNavigate();
-  const isSigned = getCookie("is-signed-in");
+  const isSigned = getCookie(COOKIES.isLoggedin);
   if (!isSigned) {
     navigate("/signin");
   }

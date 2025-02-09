@@ -3,6 +3,8 @@ import { Form, Input, Button, Checkbox, Card, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { setCookie } from "../helpers/util";
+import { signinApi } from "../api/auth.api";
+import { appRoute, COOKIES } from "../const";
 
 interface LoginFormData {
   username: string;
@@ -18,9 +20,20 @@ const SigninPage: React.FC = () => {
     try {
       setLoading(true);
       // API call would go here
-      setCookie("pidica-token", "1234");
+      const response = await signinApi({
+        email: values.username,
+        password: values.password,
+      });
+      if (response.result === "failed") {
+        throw new Error("Login failed!");
+      }
+      setCookie(COOKIES.token, response.data.token);
+      setCookie(COOKIES.email, response.data.user.email);
+      setCookie(COOKIES.cd, response.data.user.cd);
+      setCookie(COOKIES.name, response.data.user.username);
+      setCookie(COOKIES.isLoggedin, "true");
       message.success("Login successful!");
-      navigate("/dashboard");
+      navigate(appRoute.reportManage);
     } catch (error) {
       message.error("Login failed!");
     } finally {

@@ -1,19 +1,36 @@
 import { fetchRequest } from "./helper.api";
 type SiginInApiBody = {
-  username: string;
+  email: string;
   password: string;
 };
-const signupApi = async (body: SiginInApiBody) => {
-  const response = await fetchRequest(`/auth/signup`, "POST", body);
+
+type SigninApiRes = {
+  data: {
+    token: string;
+    user: {
+      cd: string;
+      username: string;
+      email: string;
+    };
+  };
+  result: "success" | "failed";
+};
+export const signinApi = async (
+  body: SiginInApiBody
+): Promise<SigninApiRes> => {
+  const response = await fetchRequest(`/auth/signin`, "POST", body, true);
   return response;
 };
 
-type SIgnUpApiBody = {
+type SignUpApiBody = {
   username: string;
   password: string;
   email: string;
 };
-const signinApi = async (body: SIgnUpApiBody) => {
-  const response = await fetchRequest(`/auth/signin`, "POST", body);
+type SignupApiRes = {
+  result: "success" | "failed";
+};
+export const signupApi = async (body: SignUpApiBody): Promise<SignupApiRes> => {
+  const response = await fetchRequest(`/auth/signup`, "POST", body, true);
   return response;
 };

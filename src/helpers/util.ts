@@ -1,3 +1,5 @@
+import { COOKIES } from "../const";
+
 export const getCookie = (name: string) => {
   const cookie = document.cookie;
   const cookieArray = cookie.split("; ");
@@ -14,4 +16,10 @@ export const setCookie = (name: string, value: string, days: number = 1) => {
   const date = new Date();
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${value};expires=${date.toUTCString()}`;
+};
+
+export const resetAllCookies = () => {
+  Object.values(COOKIES).forEach((cookieName) => {
+    document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  });
 };
