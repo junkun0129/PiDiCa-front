@@ -47,12 +47,14 @@ const AppLayout = () => {
   return (
     <Layout style={{ height: "100vh" }}>
       <Sider
-        className="flex justify-center items-center"
+        className="flex justify-center items-center relative"
         width={appStyle.siderWidth}
         trigger={null}
         collapsible
       >
-        <div className=" text-white text-3xl my-4 ml-4"> PiDiCA</div>
+        <div className=" text-white text-3xl my-4 ml-4 flex relative">
+          PiDiCA
+        </div>
         <Menu
           onClick={({ key }) => onItemClick(key)}
           items={menuItems}

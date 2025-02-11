@@ -1,7 +1,3 @@
-import { Layout, Menu, MenuItemProps, MenuProps } from "antd";
-import { Content, Header } from "antd/es/layout/layout";
-import Sider from "antd/es/layout/Sider";
-import { useState } from "react";
 import { appRoute, appStyle } from "./const";
 import { Route, Routes } from "react-router-dom";
 import AppLayout from "./AppLayout";
