@@ -1,5 +1,8 @@
 import { getCookie, resetAllCookies, setCookie } from "../helpers/util";
-
+export type ApiRes<DATA> = {
+  result: string;
+  data: DATA;
+};
 export const fetchRequest = async (
   url: string,
   method: string,
@@ -10,7 +13,6 @@ export const fetchRequest = async (
     const token = getCookie("pidica-token");
 
     const headers = new Headers();
-
     if (!isauth) {
       if (!token) {
         resetAllCookies();
@@ -26,6 +28,7 @@ export const fetchRequest = async (
       headers,
       body: JSON.stringify(body),
     });
+
     if (response.status === 401) {
       handleAuthError();
       return { result: "failed" };

@@ -24,3 +24,9 @@ export const COOKIES = {
   name: "pidica-name",
   isLoggedin: "is-loggedin",
 };
+
+export const TASK_STATUS = {
+  "1": "未着手",
+  "2": "進行中",
+  "3": "完了済",
+};

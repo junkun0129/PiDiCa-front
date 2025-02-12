@@ -23,3 +23,8 @@ export const resetAllCookies = () => {
     document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   });
 };
+
+export function formatDate(isoString: string) {
+  const date = new Date(isoString);
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+}

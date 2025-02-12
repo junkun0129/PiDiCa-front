@@ -22,13 +22,12 @@ import {
   getTaskListApi,
 } from "../api/task.api";
 import TextArea from "antd/es/input/TextArea";
+import { TASK_STATUS } from "../const";
+import { formatDate } from "../helpers/util";
+import { getProjectEntriesApi, ProjectEntry } from "../api/project.api";
 
 const dataIndex = {
   name: "name",
-  p: "p",
-  d: "d",
-  c: "c",
-  a: "a",
   created: "created",
   updated: "updated",
   project_name: "project_name",
@@ -36,7 +35,17 @@ const dataIndex = {
   detail: "detail",
 };
 
-const defaultcolumns: TableColumnsType = [
+type DataType = {
+  key: string;
+  name: string;
+  created: string;
+  updated: string;
+  project_name: string;
+  status: string;
+  detail: string;
+};
+
+const defaultcolumns: TableColumnsType<DataType> = [
   {
     title: "タスク名",
     dataIndex: dataIndex.name,
@@ -45,28 +54,16 @@ const defaultcolumns: TableColumnsType = [
     width: 100,
   },
   {
-    title: "P（計画）",
-    dataIndex: dataIndex.p,
-    key: dataIndex.p,
+    title: "詳細",
+    dataIndex: dataIndex.detail,
+    key: dataIndex.detail,
     width: 200,
   },
   {
-    title: "D（実施）",
-    dataIndex: dataIndex.d,
-    key: dataIndex.d,
-    width: 200,
-  },
-  {
-    title: "C（チェック）",
-    dataIndex: dataIndex.c,
-    key: dataIndex.c,
-    width: 200,
-  },
-  {
-    title: "A（対策）",
-    dataIndex: dataIndex.a,
-    key: dataIndex.a,
-    width: 200,
+    title: "ステータス",
+    dataIndex: dataIndex.status,
+    key: dataIndex.status,
+    width: 100,
   },
   {
     title: "作成日",
@@ -86,18 +83,6 @@ const defaultcolumns: TableColumnsType = [
     key: dataIndex.project_name,
     width: 200,
   },
-  {
-    title: "ステータス",
-    dataIndex: dataIndex.status,
-    key: dataIndex.status,
-    width: 100,
-  },
-  {
-    title: "詳細",
-    dataIndex: dataIndex.detail,
-    key: dataIndex.detail,
-    width: 200,
-  },
 ];
 const TaskManagePage = () => {
   // const { notification, modal } = App.useApp();
@@ -107,7 +92,9 @@ const TaskManagePage = () => {
   const [pagination, setpagination] = useState(10);
   const [offset, setoffset] = useState(0);
   const [sort, setsort] = useState("asc;created_at");
-  const [project, setproject] = useState("");
+
+  const [selectedProjects, setselectedProjects] = useState("");
+  const [projectEntries, setprojectEntries] = useState<ProjectEntry[]>([]);
   const [selectedRowKeys, setselectedRowKeys] = useState<string[]>([]);
   const [total, settotal] = useState(0);
 
@@ -118,12 +105,19 @@ const TaskManagePage = () => {
       key: "",
     },
   ]);
-
+  useEffect(() => {
+    getProjectEntries();
+  }, []);
   useEffect(() => {
     //data fetching
-    updateTaskList({ offset, pagination, sort, project });
-  }, [pagination, offset, sort, project]);
-
+    updateTaskList({ offset, pagination, sort, project: selectedProjects });
+  }, [pagination, offset, sort, selectedProjects]);
+  const getProjectEntries = async () => {
+    const res = await getProjectEntriesApi();
+    if (res.result === "success") {
+      setprojectEntries(res.data);
+    }
+  };
   const createTask = async ({ body }: CreateTaskApiReq) => {
     const res = await createTaskApi({
       body,
@@ -134,7 +128,7 @@ const TaskManagePage = () => {
     }
   };
 
-  const onCLickCreateTask = () => {
+  const onCLickCreateTask = (entries: ProjectEntry[]) => {
     console.log("object");
     console.log(modal);
 
@@ -149,10 +143,13 @@ const TaskManagePage = () => {
               </Form.Item>
               <Form.Item name="project_cd">
                 <Select>
-                  {["project_cd1", "project_cd2"].map((item) => {
+                  {entries.map((item) => {
                     return (
-                      <Select.Option key={item} value={item}>
-                        {item}
+                      <Select.Option
+                        key={item.project_cd}
+                        value={item.project_cd}
+                      >
+                        {item.project_name}
                       </Select.Option>
                     );
                   })}
@@ -166,10 +163,6 @@ const TaskManagePage = () => {
         </div>
       ),
       onOk: async (close) => {
-        console.log(form.getFieldValue("task_name"));
-        console.log(form.getFieldValue("task_dettail"));
-        console.log(form.getFieldValue("project_cd"));
-        console.log(form.getFieldsValue());
         await createTask({
           body: {
             task_name: form.getFieldValue("task_name"),
@@ -178,7 +171,7 @@ const TaskManagePage = () => {
             task_status: "1",
           },
         });
-        updateTaskList({ offset, pagination, sort, project });
+        updateTaskList({ offset, pagination, sort, project: selectedProjects });
         close();
       },
     });
@@ -189,7 +182,6 @@ const TaskManagePage = () => {
     let works: Promise<any>[] = [];
     let taskQueue = [...selectedRowKeys]; // 配列のコピーを作成
 
-    // 最初のバッチを作成
     for (let i = 0; i < batchSize && taskQueue.length; i++) {
       works.push(
         deleteTaskApi({ body: { task_cd: taskQueue.shift() as string } })
@@ -197,13 +189,8 @@ const TaskManagePage = () => {
     }
 
     while (taskQueue.length) {
-      // 先に完了した Promise を待つ
       const finishedWork = await Promise.race(works);
-
-      // 完了したタスクを `works` から削除
       works = works.filter((work) => work !== finishedWork);
-
-      // 次のタスクを追加
       if (taskQueue.length) {
         works.push(
           deleteTaskApi({ body: { task_cd: taskQueue.shift() as string } })
@@ -211,13 +198,13 @@ const TaskManagePage = () => {
       }
     }
 
-    // 残った処理をすべて待つ
     await Promise.all(works);
-
-    // Refresh task list after deletion
-    await updateTaskList({ offset, pagination, sort, project });
-
-    // Clear selection
+    await updateTaskList({
+      offset,
+      pagination,
+      sort,
+      project: selectedProjects,
+    });
     setselectedRowKeys([]);
   };
 
@@ -232,22 +219,19 @@ const TaskManagePage = () => {
     sort: string;
     project: string;
   }) => {
-    console.log("object");
     const res = await getTaskListApi({ offset, pagination, sort, project });
     if (res.result === "success") {
       settotal(parseInt(res.total));
       const newDataSource = res.data.map((item) => {
+        const updated_at = item.updated_at ? formatDate(item.updated_at) : "";
+        const created_at = formatDate(item.created_at);
         return {
           key: item.task_cd,
           name: item.task_name,
-          p: item.task_plan,
-          d: item.task_do,
-          c: item.task_check,
-          a: item.task_action,
-          created: item.created_at,
-          updated: item.updated_at,
+          created: created_at,
+          updated: updated_at,
           project_name: item.project_name,
-          status: item.task_status,
+          status: TASK_STATUS[item.task_status as keyof typeof TASK_STATUS],
           detail: item.task_detail,
         };
       });
@@ -263,7 +247,7 @@ const TaskManagePage = () => {
     <Space className="h-full w-full" direction="vertical">
       {contextHolder}
       <Typography.Title level={3}>タスク管理</Typography.Title>
-      <Button onClick={onCLickCreateTask} type="primary">
+      <Button onClick={() => onCLickCreateTask(projectEntries)} type="primary">
         タスク作成
       </Button>
 
@@ -271,7 +255,7 @@ const TaskManagePage = () => {
         size="small"
         items={tabItems}
         defaultActiveKey=""
-        activeKey={project}
+        activeKey={selectedProjects}
         onClick={handleTabItemClick}
       />
       <Button disabled={!selectedRowKeys.length} onClick={deleteTask}>

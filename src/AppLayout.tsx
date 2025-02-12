@@ -1,7 +1,7 @@
 import { Card, Layout, Menu, MenuProps } from "antd";
 import Sider from "antd/es/layout/Sider";
 import { appRoute, appStyle, COOKIES } from "./const";
-import { Content } from "antd/es/layout/layout";
+import { Content, Header } from "antd/es/layout/layout";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCookie } from "./helpers/util";
@@ -65,7 +65,8 @@ const AppLayout = () => {
         ></Menu>
       </Sider>
       <Content>
-        <Card className="m-4 h-[95vh] shadow-lg">
+        <Header className=" bg-transparent h-[30px]"></Header>
+        <Card className="m-4 h-[92vh] shadow-lg">
           <Outlet></Outlet>
         </Card>
       </Content>

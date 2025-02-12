@@ -14,10 +14,6 @@ type getTaskApiRes = {
     task_name: string;
     task_detail: string;
     task_status: string;
-    task_do: string;
-    task_check: string;
-    task_action: string;
-    task_plan: string;
     project_name: string;
     created_at: string;
     updated_at: string;
