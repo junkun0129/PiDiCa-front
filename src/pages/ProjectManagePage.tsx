@@ -55,7 +55,6 @@ const defaultcolumns: TableColumnsType<DataType> = [
     fixed: "left",
     width: 200,
   },
-
   {
     title: "作成日",
     dataIndex: dataIndex.created_at,

@@ -30,3 +30,8 @@ export const TASK_STATUS = {
   "2": "進行中",
   "3": "完了済",
 };
+
+export const REPORT_MODE = {
+  PLAN: "0",
+  ACTION: "1",
+};
