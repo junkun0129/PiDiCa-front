@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { describeArc, getPointOnCircle } from "../helpers/math";
 import { Modal, Input, Button } from "antd";
 import TextArea from "antd/lib/input/TextArea";
+import { useSearchParams } from "react-router-dom";
+import { QURERY_PARAM } from "../const";
+import { createReportApi } from "../api/report.api";
 
 interface Task {
   id: string;
@@ -170,7 +173,7 @@ const ReportRegisterPage = () => {
   const [unitNum, setUnitNum] = useState(8);
   const [minuteGranularity, setMinuteGranularity] = useState(60);
   const containerRef = useRef<HTMLDivElement>(null);
-
+  const [serachParams] = useSearchParams();
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [draggingHandle, setDraggingHandle] = useState<
     "start" | "end" | "move" | null
@@ -434,9 +437,9 @@ const ReportRegisterPage = () => {
   };
 
   // 確定ボタンの処理
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const reportItems = sectors.map((sector) => {
-      const task = tasks.find((t) => t.color === sector.color);
+      const task = tasks.find((t) => t.id === sector.id);
       const details = sectorDetails[sector.id] || {
         check: "",
         do: "",
@@ -454,8 +457,17 @@ const ReportRegisterPage = () => {
 
     const reportData = {
       report_workhour: `${24 / unitNum}`,
+      report_date: serachParams.get(QURERY_PARAM.DATE) || "",
+      report_status: serachParams.get(QURERY_PARAM.MODE) || "",
       report_items: reportItems,
     };
+
+    const res = await createReportApi({ body: reportData });
+    if (res.result === "success") {
+      console.log("作成に成功しました");
+    } else {
+      console.log("作成に失敗しました");
+    }
 
     console.log("Report Data:", reportData);
   };

@@ -35,3 +35,8 @@ export const REPORT_MODE = {
   PLAN: "0",
   ACTION: "1",
 };
+
+export const QURERY_PARAM = {
+  DATE: "date",
+  MODE: "mode",
+};

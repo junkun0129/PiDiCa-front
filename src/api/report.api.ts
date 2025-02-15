@@ -44,6 +44,6 @@ export const createReportApi = async (
   req: CreateReportReq
 ): Promise<CreateReportRes> => {
   const url = "/report/create";
-  const res = await fetchRequest(url, "post", req);
+  const res = await fetchRequest(url, "post", req.body);
   return res;
 };
