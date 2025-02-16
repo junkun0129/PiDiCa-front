@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { describeArc, getPointOnCircle } from "../helpers/math";
-import { Modal, Input, Button } from "antd";
+import { Modal, Input, Button, Result } from "antd";
 import TextArea from "antd/lib/input/TextArea";
-import { useSearchParams } from "react-router-dom";
-import { QURERY_PARAM } from "../const";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { appRoute, QURERY_PARAM } from "../const";
 import { createReportApi } from "../api/report.api";
 
 interface Task {
@@ -153,7 +153,7 @@ const ReportRegisterPage = () => {
 
   // 状態の型を明示的に指定
   const [tasks, setTasks] = useState<Task[]>(FIXED_TASKS);
-
+  const navigate = useNavigate();
   // APIからタスクを取得する処理
   useEffect(() => {
     const fetchTasks = async () => {
@@ -181,7 +181,7 @@ const ReportRegisterPage = () => {
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const [dragPreviewAngle, setDragPreviewAngle] = useState<number | null>(null);
   const [isDraggingSector, setIsDraggingSector] = useState(false);
-
+  const [isReportSubmmited, setisReportSubmmited] = useState(false);
   const granularityOptions = [5, 10, 15, 30, 60];
 
   const [startHour, setStartHour] = useState(9);
@@ -465,6 +465,7 @@ const ReportRegisterPage = () => {
     const res = await createReportApi({ body: reportData });
     if (res.result === "success") {
       console.log("作成に成功しました");
+      setisReportSubmmited(true);
     } else {
       console.log("作成に失敗しました");
     }
@@ -495,273 +496,301 @@ const ReportRegisterPage = () => {
 
   return (
     <div className="flex flex-col gap-4 p-8">
-      <div className="flex gap-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-4 items-center">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                分割数
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="24"
-                value={unitNum}
-                onChange={(e) =>
-                  setUnitNum(Math.max(1, parseInt(e.target.value) || 1))
-                }
-                className="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                時間の粒度
-              </label>
-              <select
-                value={minuteGranularity}
-                onChange={(e) => setMinuteGranularity(parseInt(e.target.value))}
-                className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              >
-                {granularityOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}分
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                勤務開始時間
-              </label>
-              <select
-                value={startHour}
-                onChange={(e) => setStartHour(parseInt(e.target.value))}
-                className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {`${i}:00`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div
-            ref={containerRef}
-            className="relative w-[500px] aspect-square border border-gray-700 rounded-lg bg-[#1A1A1A] select-none"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onClick={handleBackgroundClick}
-          >
-            <svg width="100%" height="100%" viewBox="0 0 250 250">
-              {/* 基本の円 */}
-              <circle
-                cx="125"
-                cy="125"
-                r="90"
-                stroke={COLORS.circle.stroke}
-                strokeWidth="2"
-                fill={COLORS.circle.fill}
-              />
-
-              {/* 時刻表示 */}
-              {Array.from({ length: unitNum }).map((_, i) => {
-                const angle = (i * Math.PI * 2) / unitNum - Math.PI / 2;
-                const radius = 110;
-                const x = 125 + radius * Math.cos(angle);
-                const y = 125 + radius * Math.sin(angle);
-                const isStartTime = i === 0;
-
-                return (
-                  <g key={i}>
-                    {isStartTime && (
-                      <text
-                        x={x}
-                        y={y - 14}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill={COLORS.time.startTime}
-                        fontSize="10"
-                        className="font-bold"
-                      >
-                        勤務開始
-                      </text>
-                    )}
-                    <text
-                      x={x}
-                      y={y}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill={COLORS.time.text}
-                      fontSize="12"
-                      className="font-semibold"
-                    >
-                      {getTimeLabel(i)}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* 目盛り */}
-              {Array.from({ length: unitNum * getSubdivisions() }).map(
-                (_, i) => {
-                  const angle =
-                    (i * Math.PI * 2) / (unitNum * getSubdivisions());
-                  const isMainTick = i % getSubdivisions() === 0;
-                  return (
-                    <line
-                      key={i}
-                      x1={125 + (isMainTick ? 85 : 87) * Math.cos(angle)}
-                      y1={125 + (isMainTick ? 85 : 87) * Math.sin(angle)}
-                      x2={125 + 90 * Math.cos(angle)}
-                      y2={125 + 90 * Math.sin(angle)}
-                      stroke={isMainTick ? COLORS.ticks.main : COLORS.ticks.sub}
-                      strokeWidth={isMainTick ? "2" : "1"}
-                    />
-                  );
-                }
-              )}
-
-              {/* セクター */}
-              {sectors.map((sector) => (
-                <g key={sector.id}>
-                  <path
-                    d={describeArc(
-                      125,
-                      125,
-                      90,
-                      sector.startAngle,
-                      sector.endAngle
-                    )}
-                    fill={sector.color}
-                    className="cursor-move"
-                    opacity={
-                      isDraggingSector && selectedSector === sector.id
-                        ? 0.7
-                        : 0.9
+      {isReportSubmmited ? (
+        <Result
+          title="提出成功"
+          status="success"
+          subTitle={
+            <Button
+              onClick={(e) => {
+                navigate(appRoute.reportManage);
+              }}
+            >
+              日報管理画面へ戻る
+            </Button>
+          }
+        ></Result>
+      ) : (
+        <>
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4 items-center">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    分割数
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={unitNum}
+                    onChange={(e) =>
+                      setUnitNum(Math.max(1, parseInt(e.target.value) || 1))
                     }
-                    onClick={(e) => handleSectorClick(e, sector)}
-                    onMouseDown={(e) => handleSectorMouseDown(e, sector)}
+                    className="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
-                  {selectedSector === sector.id && (
-                    <>
-                      {/* ハンドル */}
-                      {["start", "end"].map((type) => {
-                        const angle =
-                          type === "start"
-                            ? sector.startAngle
-                            : sector.endAngle;
-                        return (
-                          <g key={type} style={{ pointerEvents: "all" }}>
-                            <circle
-                              cx={125 + 90 * Math.cos(angle)}
-                              cy={125 + 90 * Math.sin(angle)}
-                              r="12"
-                              className="handle-hitbox"
-                              onMouseDown={(e) =>
-                                handleHandleMouseDown(
-                                  e,
-                                  sector.id,
-                                  type as "start" | "end"
-                                )
-                              }
-                            />
-                            <circle
-                              cx={125 + 90 * Math.cos(angle)}
-                              cy={125 + 90 * Math.sin(angle)}
-                              r="6"
-                              fill={COLORS.handles.fill}
-                              stroke={COLORS.handles.stroke}
-                              strokeWidth="2"
-                              pointerEvents="none"
-                            />
-                          </g>
-                        );
-                      })}
-                    </>
-                  )}
-                </g>
-              ))}
-
-              {/* プレビュー */}
-              {dragPreview && (
-                <path
-                  d={describeArc(
-                    125,
-                    125,
-                    90,
-                    dragPreview.sector.startAngle,
-                    dragPreview.sector.endAngle
-                  )}
-                  fill={
-                    dragPreview.valid
-                      ? COLORS.preview.valid
-                      : COLORS.preview.invalid
-                  }
-                  className="pointer-events-none"
-                />
-              )}
-            </svg>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-6 min-w-[200px]">
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-400">固定項目</h3>
-            <div className="space-y-2">
-              {FIXED_TASKS.map((task) => (
-                <div
-                  key={task.id}
-                  draggable
-                  onDragStart={(e) => handleTaskDragStart(task)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
-                >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: task.color }}
-                  />
-                  <span className="text-sm text-gray-200">{task.name}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-400">タスク一覧</h3>
-            <div className="space-y-2">
-              {tasks
-                .filter((task) => !task.isFixed)
-                .map((task) => (
-                  <div
-                    key={task.id}
-                    draggable
-                    onDragStart={(e) => handleTaskDragStart(task)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    時間の粒度
+                  </label>
+                  <select
+                    value={minuteGranularity}
+                    onChange={(e) =>
+                      setMinuteGranularity(parseInt(e.target.value))
+                    }
+                    className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   >
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: task.color }}
+                    {granularityOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}分
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    勤務開始時間
+                  </label>
+                  <select
+                    value={startHour}
+                    onChange={(e) => setStartHour(parseInt(e.target.value))}
+                    className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {`${i}:00`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div
+                ref={containerRef}
+                className="relative w-[500px] aspect-square border border-gray-700 rounded-lg bg-[#1A1A1A] select-none"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onClick={handleBackgroundClick}
+              >
+                <svg width="100%" height="100%" viewBox="0 0 250 250">
+                  {/* 基本の円 */}
+                  <circle
+                    cx="125"
+                    cy="125"
+                    r="90"
+                    stroke={COLORS.circle.stroke}
+                    strokeWidth="2"
+                    fill={COLORS.circle.fill}
+                  />
+
+                  {/* 時刻表示 */}
+                  {Array.from({ length: unitNum }).map((_, i) => {
+                    const angle = (i * Math.PI * 2) / unitNum - Math.PI / 2;
+                    const radius = 110;
+                    const x = 125 + radius * Math.cos(angle);
+                    const y = 125 + radius * Math.sin(angle);
+                    const isStartTime = i === 0;
+
+                    return (
+                      <g key={i}>
+                        {isStartTime && (
+                          <text
+                            x={x}
+                            y={y - 14}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill={COLORS.time.startTime}
+                            fontSize="10"
+                            className="font-bold"
+                          >
+                            勤務開始
+                          </text>
+                        )}
+                        <text
+                          x={x}
+                          y={y}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fill={COLORS.time.text}
+                          fontSize="12"
+                          className="font-semibold"
+                        >
+                          {getTimeLabel(i)}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* 目盛り */}
+                  {Array.from({ length: unitNum * getSubdivisions() }).map(
+                    (_, i) => {
+                      const angle =
+                        (i * Math.PI * 2) / (unitNum * getSubdivisions());
+                      const isMainTick = i % getSubdivisions() === 0;
+                      return (
+                        <line
+                          key={i}
+                          x1={125 + (isMainTick ? 85 : 87) * Math.cos(angle)}
+                          y1={125 + (isMainTick ? 85 : 87) * Math.sin(angle)}
+                          x2={125 + 90 * Math.cos(angle)}
+                          y2={125 + 90 * Math.sin(angle)}
+                          stroke={
+                            isMainTick ? COLORS.ticks.main : COLORS.ticks.sub
+                          }
+                          strokeWidth={isMainTick ? "2" : "1"}
+                        />
+                      );
+                    }
+                  )}
+
+                  {/* セクター */}
+                  {sectors.map((sector) => (
+                    <g key={sector.id}>
+                      <path
+                        d={describeArc(
+                          125,
+                          125,
+                          90,
+                          sector.startAngle,
+                          sector.endAngle
+                        )}
+                        fill={sector.color}
+                        className="cursor-move"
+                        opacity={
+                          isDraggingSector && selectedSector === sector.id
+                            ? 0.7
+                            : 0.9
+                        }
+                        onClick={(e) => handleSectorClick(e, sector)}
+                        onMouseDown={(e) => handleSectorMouseDown(e, sector)}
+                      />
+                      {selectedSector === sector.id && (
+                        <>
+                          {/* ハンドル */}
+                          {["start", "end"].map((type) => {
+                            const angle =
+                              type === "start"
+                                ? sector.startAngle
+                                : sector.endAngle;
+                            return (
+                              <g key={type} style={{ pointerEvents: "all" }}>
+                                <circle
+                                  cx={125 + 90 * Math.cos(angle)}
+                                  cy={125 + 90 * Math.sin(angle)}
+                                  r="12"
+                                  className="handle-hitbox"
+                                  onMouseDown={(e) =>
+                                    handleHandleMouseDown(
+                                      e,
+                                      sector.id,
+                                      type as "start" | "end"
+                                    )
+                                  }
+                                />
+                                <circle
+                                  cx={125 + 90 * Math.cos(angle)}
+                                  cy={125 + 90 * Math.sin(angle)}
+                                  r="6"
+                                  fill={COLORS.handles.fill}
+                                  stroke={COLORS.handles.stroke}
+                                  strokeWidth="2"
+                                  pointerEvents="none"
+                                />
+                              </g>
+                            );
+                          })}
+                        </>
+                      )}
+                    </g>
+                  ))}
+
+                  {/* プレビュー */}
+                  {dragPreview && (
+                    <path
+                      d={describeArc(
+                        125,
+                        125,
+                        90,
+                        dragPreview.sector.startAngle,
+                        dragPreview.sector.endAngle
+                      )}
+                      fill={
+                        dragPreview.valid
+                          ? COLORS.preview.valid
+                          : COLORS.preview.invalid
+                      }
+                      className="pointer-events-none"
                     />
-                    <span className="text-sm text-gray-200">{task.name}</span>
-                  </div>
-                ))}
+                  )}
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6 min-w-[200px]">
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-400">
+                  固定項目
+                </h3>
+                <div className="space-y-2">
+                  {FIXED_TASKS.map((task) => (
+                    <div
+                      key={task.id}
+                      draggable
+                      onDragStart={(e) => handleTaskDragStart(task)}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
+                    >
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: task.color }}
+                      />
+                      <span className="text-sm text-gray-200">{task.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-400">
+                  タスク一覧
+                </h3>
+                <div className="space-y-2">
+                  {tasks
+                    .filter((task) => !task.isFixed)
+                    .map((task) => (
+                      <div
+                        key={task.id}
+                        draggable
+                        onDragStart={(e) => handleTaskDragStart(task)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: task.color }}
+                        />
+                        <span className="text-sm text-gray-200">
+                          {task.name}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="flex justify-end mt-4">
-        <Button
-          type="primary"
-          onClick={handleSubmit}
-          className="bg-blue-500 hover:bg-blue-600"
-        >
-          確定
-        </Button>
-      </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              確定
+            </Button>
+          </div>
+        </>
+      )}
 
       <Modal
         title="タスク詳細"

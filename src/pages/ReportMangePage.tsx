@@ -1,104 +1,56 @@
-import { Button, DatePicker, Segmented } from "antd";
+import {
+  Button,
+  DatePicker,
+  Flex,
+  Pagination,
+  Segmented,
+  Typography,
+} from "antd";
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { appRoute, QURERY_PARAM, REPORT_MODE } from "../const";
 import dayjs from "dayjs";
-import { getCreatedByMonthApi } from "../api/report.api";
+import { getCreatedByMonthApi, getReportListApi } from "../api/report.api";
+import ReportCreateButton from "../components/buttons/ReportCreateButton";
 
 const ReportMangePage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [selectedMonth, setselectedMonth] = useState<string>(
+  const [selectedDate, setselectedDate] = useState<string>(
     dayjs(new Date()).format("YYYY-MM")
   );
-  const [mode, setmode] = useState<string>(REPORT_MODE.PLAN);
-  const [ChangedStats, setChangedStatus] = useState<{
-    list: any[];
-    newDate: string | null;
-    newMode: string | null;
-  }>({
-    list: [],
-    newDate: null,
-    newMode: null,
-  });
-
+  const [offset, setoffset] = useState(0);
+  const [pagination, setpagination] = useState(10);
+  const [reportList, setreportList] = useState<any[]>([]);
+  const [total, settotal] = useState(0);
   useEffect(() => {
-    if (ChangedStats.newDate) {
-      console.log("datechanged", ChangedStats);
-      setselectedMonth(ChangedStats.newDate);
-      setChangedStatus((pre) => ({ ...pre, newDate: null }));
-    }
-    if (ChangedStats.newMode) {
-      console.log("modechanged", ChangedStats);
-      setmode(ChangedStats.newMode);
-      setselectedMonth(selectedMonth);
-      setChangedStatus((pre) => ({ ...pre, newMode: null }));
-    }
-  }, [ChangedStats]);
-
-  const onPanelChange = async (date: any, modenode: string) => {
-    const newMonth = dayjs(date).format("YYYY-MM");
-    const list = await updateDateList(modenode, newMonth);
-    if (!list) return;
-    setChangedStatus((pre) => ({ ...pre, list, newDate: newMonth }));
-  };
-
-  const onModeChange = async (mode: string, date: string) => {
-    const list = await updateDateList(mode, date);
-    if (!list) return;
-    setChangedStatus((pre) => ({ ...pre, list, newMode: mode }));
-  };
-
-  const updateDateList = async (mode: string, selectedMonth: string) => {
-    try {
-      const res = await getCreatedByMonthApi({
-        date: selectedMonth,
-        status: mode,
-      });
-      return res.data;
-    } catch (err) {
-      console.log("データ取得に失敗しました");
-    }
-  };
-  const onClickDate = (date: any, mode: string) => {
-    const selectedDate = dayjs(date).format("YYYY-MM-DD");
-    const selectedMode = mode;
-    const queryParams = new URLSearchParams(location.search);
-    queryParams.set(QURERY_PARAM.DATE, selectedDate);
-    queryParams.set(QURERY_PARAM.MODE, selectedMode);
-    navigate({
-      pathname: appRoute.reportRegister,
-      search: queryParams.toString(),
+    getReportList();
+  }, [selectedDate]);
+  const getReportList = async () => {
+    const res = await getReportListApi({
+      date: selectedDate,
+      offset,
+      pagination,
     });
+    console.log(res);
+    setreportList(res.data);
+    settotal(res.total);
   };
   return (
-    <div>
-      <DatePicker
-        format={"YYYY-MM"}
-        disabledDate={(current) => {
-          if (dayjs(current).format("MM") !== selectedMonth.split("-")[1])
-            return false;
-          const date = dayjs(current).format("DD");
-          return ChangedStats.list.includes(date);
+    <div className="w-full">
+      <Flex className="w-full" justify="space-between" align="center">
+        <Typography.Title level={3}>{`${selectedDate.split("-")[0]}年${
+          selectedDate.split("-")[1]
+        }月の日報一覧`}</Typography.Title>
+        <ReportCreateButton />
+      </Flex>
+
+      <Pagination
+        total={total}
+        pageSize={pagination}
+        current={offset}
+        onChange={(page, pageSize) => {
+          setoffset(page);
+          setpagination(pageSize);
         }}
-        onChange={(date) => onClickDate(date, mode)}
-        onPanelChange={(date) => onPanelChange(date, mode)}
-        pickerValue={dayjs(selectedMonth)}
-        renderExtraFooter={() => (
-          <Segmented
-            options={[
-              {
-                label: "計画",
-                value: REPORT_MODE.PLAN,
-              },
-              {
-                label: "実績",
-                value: REPORT_MODE.ACTION,
-              },
-            ]}
-            onChange={(value) => onModeChange(value, selectedMonth)}
-          />
-        )}
       />
     </div>
   );

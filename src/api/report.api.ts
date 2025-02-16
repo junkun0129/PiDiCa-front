@@ -47,3 +47,16 @@ export const createReportApi = async (
   const res = await fetchRequest(url, "post", req.body);
   return res;
 };
+type GetReportListApiReq = {
+  date: string;
+  offset: number;
+  pagination: number;
+};
+
+export const getReportListApi = async (
+  req: GetReportListApiReq
+): Promise<any> => {
+  const url = `/report/list?offset=${req.offset}&pagination=${req.pagination}&date=${req.date}`;
+  const res = await fetchRequest(url, "get");
+  return res;
+};
