@@ -1,19 +1,12 @@
-import { Card, Layout, Menu, MenuProps } from "antd";
-import Sider from "antd/es/layout/Sider";
-import { appRoute, appStyle, COOKIES } from "./const";
-import { Content, Header } from "antd/es/layout/layout";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { getCookie } from "./helpers/util";
+import { Card, Layout } from "antd";
 
-const {
-  reportManage,
-  taskManage,
-  projectManage,
-  userManage,
-  attendManage,
-  setting,
-} = appRoute;
+import { COOKIES } from "./const";
+import { Content } from "antd/es/layout/layout";
+import { Outlet, useNavigate } from "react-router-dom";
+
+import { getCookie } from "./helpers/util";
+import AppHeader from "./components/layouts/AppHeader";
+import AppSider from "./components/layouts/AppSider";
 
 const AppLayout = () => {
   const navigate = useNavigate();
@@ -21,52 +14,13 @@ const AppLayout = () => {
   if (!isSigned) {
     navigate("/signin");
   }
-  const menuItems: MenuProps["items"] = [
-    { key: reportManage, label: "日報管理" },
-    { key: taskManage, label: "タスク管理" },
-    { key: projectManage, label: "プロジェクト管理" },
-    { key: userManage, label: "ユーザー管理" },
-    { key: attendManage, label: "勤怠管理" },
-    { key: setting, label: "設定" },
-  ];
-
-  const [selectedKey, setselectedKey] = useState(reportManage);
-
-  const location = useLocation();
-
-  useEffect(() => {
-    console.log(location.pathname);
-    const path = location.pathname.replace("/", "");
-    setselectedKey(path);
-  }, [location]);
-
-  const onItemClick = (key: string) => {
-    navigate(key);
-  };
 
   return (
-    <Layout style={{ height: "100vh" }}>
-      <Sider
-        className="flex justify-center items-center relative"
-        width={appStyle.siderWidth}
-        trigger={null}
-        collapsible
-      >
-        <div className=" text-white text-3xl my-4 ml-4 flex relative">
-          PiDiCA
-        </div>
-        <Menu
-          onClick={({ key }) => onItemClick(key)}
-          items={menuItems}
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          activeKey={selectedKey}
-        ></Menu>
-      </Sider>
-      <Content>
-        <Header className=" bg-transparent h-[30px]"></Header>
-        <Card className="m-4 h-[92vh] shadow-lg">
+    <Layout className="h-screen overflow-hidden">
+      <AppSider />
+      <Content className="flex flex-col min-h-0 px-4">
+        <AppHeader />
+        <Card className="flex-1 rounded-lg border-0 shadow-lg overflow-auto">
           <Outlet></Outlet>
         </Card>
       </Content>

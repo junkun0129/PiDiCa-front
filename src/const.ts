@@ -45,8 +45,8 @@ export const QURERY_PARAM = {
 export const REPORT_REGISTER_COLORS = {
   background: "#1A1A1A", // よりダークな背景
   circle: {
-    fill: "#242424", // 深みのあるグレー
     stroke: "#404040", // ボーダー用のミディアムグレー
+    fill: "black", // 深みのあるグレー
   },
   time: {
     text: "#9CA3AF", // 柔らかいグレー

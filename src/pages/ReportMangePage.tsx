@@ -1,13 +1,20 @@
 import { Button, DatePicker, Flex, Pagination, Typography } from "antd";
 import { ReactNode, useEffect, useState } from "react";
 import dayjs from "dayjs";
-import { getReportListApi, ReportView } from "../api/report.api";
+import {
+  getReportListApi,
+  ReportItemView,
+  ReportView,
+} from "../api/report.api";
 import ReportCreateButton from "../components/buttons/ReportCreateButton";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { appRoute, QURERY_PARAM, REPORT_MODE } from "../const";
-import { padZero } from "../helpers/util";
+import { formatDate, padZero } from "../helpers/util";
 import { calculateArc } from "../helpers/math";
-
+const REPORT_STATUS = {
+  Plan: "予定",
+  Action: "実働",
+};
 const ReportMangePage = () => {
   const [selectedDate, setselectedDate] = useState<string>(
     dayjs(new Date()).format("YYYY-MM")
@@ -70,55 +77,70 @@ const ReportMangePage = () => {
     data,
     worktype,
   }: {
-    data: any;
+    data: ReportView;
     worktype: string;
   }) => {
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
-    console.log(data);
+
     return (
       <div>
-        <h4>{worktype}</h4>
-        <svg width="120" height="120" viewBox="-60 -60 120 120">
+        <h4>{REPORT_STATUS[worktype as keyof typeof REPORT_STATUS]}</h4>
+        <svg width="200" height="200" viewBox="-100 -100 200 200">
           {/* 背景の円 */}
           <circle
             cx="0"
             cy="0"
-            r="50"
+            r="80"
             fill="none"
             stroke="#eee"
-            strokeWidth="10"
+            strokeWidth="16"
           />
 
           {/* 作業時間のアーク */}
           {data.reportitems.length > 0 &&
-            data.reportitems.map((item: any, index: number) => {
-              console.log(item);
+            data.reportitems.map((item: ReportItemView, index: number) => {
               const arc = calculateArc(
-                item.ri_starttime,
-                item.ri_endtime,
-                data.workhour
+                item.ri_starttime.toString(),
+                item.ri_endtime.toString(),
+                parseInt(data.report_workhour),
+                parseInt(data.report_workhour.split("-")[0]),
+                80
               );
               return (
                 <g key={index}>
                   <path
-                    d={arc.path}
-                    fill="none"
-                    stroke={COLORS[index % COLORS.length]}
-                    strokeWidth="10"
-                  />
-                  {/* オプション: 時間を表示 */}
-                  <text
-                    x="0"
-                    y={-60 + index * 20}
-                    fontSize="10"
+                    d={arc}
                     fill={COLORS[index % COLORS.length]}
-                  >
-                    {`${item.starttime}-${item.endtime}`}
-                  </text>
+                    stroke={COLORS[index % COLORS.length]}
+                    strokeWidth="1"
+                  />
                 </g>
               );
             })}
+
+          {/* 中心の白い円 */}
+          <circle
+            cx="0"
+            cy="0"
+            r="32"
+            fill="white"
+            stroke="#eee"
+            strokeWidth="1"
+          />
+
+          {/* 中心のテキスト（例：合計時間など） */}
+          <text
+            x="0"
+            y="0"
+            fontSize="16"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="#333"
+          >
+            {data.report_workhour}h
+          </text>
         </svg>
+        <div>{"作成日：" + formatDate(data.report_created_at)}</div>
       </div>
     );
   };
@@ -138,7 +160,7 @@ const ReportMangePage = () => {
         </Typography.Title>
         <ReportCreateButton />
       </Flex>
-      <Flex>
+      <Flex wrap="wrap">
         {reportList.maxDate &&
           reportList.maxDate !== "" &&
           !isNaN(parseInt(reportList.maxDate)) &&
@@ -150,9 +172,12 @@ const ReportMangePage = () => {
               const actionPropary = `${day}-${REPORT_MODE.ACTION}`;
               console.log(planPropary);
               return (
-                <div className="w-[50%]" key={day}>
-                  <div>{day}日</div>
-                  <Flex>
+                <div
+                  className="w-full md:w-[calc(50%-1rem)] shadow-lg rounded-lg m-2 p-4 min-h-[300px]"
+                  key={day}
+                >
+                  <Typography.Title level={5}>{day}日</Typography.Title>
+                  <Flex justify="space-around">
                     <div>
                       {planPropary in reportList.list ? (
                         <WorkHourPieChart

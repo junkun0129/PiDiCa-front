@@ -50,13 +50,21 @@ export const createReportApi = async (
 type GetReportListApiReq = {
   date: string;
 };
+
+export type ReportItemView = {
+  ri_starttime: string;
+  ri_endtime: string;
+  tasks: {
+    task_name: string;
+  };
+};
 export type ReportView = {
   report_cd: string;
   report_created_at: string;
   report_date: string;
   report_status: string;
   report_workhour: string;
-  reportitems: any[];
+  reportitems: ReportItemView[];
 };
 type GetReportListApiRes = {
   result: string;

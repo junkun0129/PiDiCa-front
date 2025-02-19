@@ -20,6 +20,7 @@ import WorkHourSelect from "../components/inputs/WorkHourSelect";
 import TimeUnitChanger from "../components/inputs/TimeUnitChanger";
 import WorkStartTimeChanger from "../components/inputs/WorkStartTimeChanger";
 import Sector from "../components/shapes/Sector";
+import EditSectorModal from "../components/modals/EditSectorModal";
 export interface Task {
   name: string;
   color: string;
@@ -104,7 +105,7 @@ const ReportRegisterPage = () => {
         const newTasks: Task[] = res.data.map((item: any) => {
           return {
             name: item.task_name,
-            color: "#000000",
+            color: "gray",
             isFixed: false,
             task_cd: item.task_cd,
           };
@@ -119,18 +120,37 @@ const ReportRegisterPage = () => {
   }, []);
 
   const formatTime = (angle: number): string => {
-    // 角度を時計回りに変換（-π/2 が開始時刻）
-    const normalizedAngle = -angle + Math.PI / 2;
+    // デバッグ用にコンソール出力
+    console.log("Input angle:", angle);
 
-    // インデックスを計算（どの区画にいるか）
-    let index = Math.round((normalizedAngle / (Math.PI * 2)) * unitNum);
-    if (index < 0) index += unitNum;
-    if (index >= unitNum) index = 0;
+    // 角度を[0, 2π]の範囲に正規化（12時の位置を0とする）
+    let normalizedAngle = angle;
+    while (normalizedAngle < 0) normalizedAngle += Math.PI * 2;
+    while (normalizedAngle >= Math.PI * 2) normalizedAngle -= Math.PI * 2;
 
-    // インデックスから実際の時刻を計算
-    const hour = (startHour + index) % 24;
+    // 12時の位置（-π/2）を0とするように調整
+    let timeAngle = normalizedAngle + Math.PI / 2;
+    if (timeAngle >= Math.PI * 2) timeAngle -= Math.PI * 2;
 
-    return `${hour.toString().padStart(2, "0")}-00`;
+    // 1時間あたりの分割数を計算
+    const divisionsPerHour = 60 / minuteGranularity;
+
+    // 全体の区画数を計算
+    const totalDivisions = unitNum * divisionsPerHour;
+
+    // 角度から区画インデックスを計算
+    const index = Math.round((timeAngle / (Math.PI * 2)) * totalDivisions);
+
+    // 時と分を計算
+    const hourIndex = Math.floor(index / divisionsPerHour);
+    const minuteIndex = index % divisionsPerHour;
+
+    const hour = (startHour + hourIndex) % 24;
+    const minutes = minuteIndex * minuteGranularity;
+
+    return `${hour.toString().padStart(2, "0")}-${minutes
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const getTimeLabel = (index: number): string => {
@@ -275,12 +295,10 @@ const ReportRegisterPage = () => {
     const point = findNearestPoint(e.clientX, e.clientY);
     const angle = point.angle;
 
-    // 勤務開始時間以前への配置のみを制限
     const normalizedStartAngle = normalizeAngle(angle);
     if (normalizedStartAngle < -Math.PI / 2 && normalizedStartAngle > -Math.PI)
       return;
 
-    // セクターの幅を計算（unitNumに基づく）
     const sectorWidth = (Math.PI * 2) / unitNum;
 
     const newSector: Sector = {
@@ -368,7 +386,7 @@ const ReportRegisterPage = () => {
     });
 
     const reportData = {
-      report_workhour: `${24 / unitNum}`,
+      report_workhour: unitNum.toString(),
       report_date: serachParams.get(QURERY_PARAM.DATE) || "",
       report_status: serachParams.get(QURERY_PARAM.MODE) || "",
       report_items: reportItems,
@@ -407,7 +425,7 @@ const ReportRegisterPage = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-8">
+    <div className="flex flex-col h-screen">
       {isReportSubmmited ? (
         <Result
           title="提出成功"
@@ -424,176 +442,188 @@ const ReportRegisterPage = () => {
         ></Result>
       ) : (
         <>
-          <div className="flex gap-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-4 items-center">
-                <WorkHourSelect unitNum={unitNum} setUnitNum={setUnitNum} />
-                <TimeUnitChanger
-                  minuteGranularity={minuteGranularity}
-                  setMinuteGranularity={setMinuteGranularity}
-                />
-                <WorkStartTimeChanger
-                  startHour={startHour}
-                  setStartHour={setStartHour}
-                />
+          <div className="flex flex-col lg:flex-row h-[calc(100vh-3rem)] -mt-5">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-x-4 gap-y-1 p-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <WorkHourSelect unitNum={unitNum} setUnitNum={setUnitNum} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <TimeUnitChanger
+                    minuteGranularity={minuteGranularity}
+                    setMinuteGranularity={setMinuteGranularity}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <WorkStartTimeChanger
+                    startHour={startHour}
+                    setStartHour={setStartHour}
+                  />
+                </div>
               </div>
 
-              <div
-                ref={containerRef}
-                className="relative w-[500px] aspect-square border border-gray-700 rounded-lg bg-[#1A1A1A] select-none"
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onClick={handleBackgroundClick}
-              >
-                <svg width="100%" height="100%" viewBox="0 0 250 250">
-                  {/* 基本の円 */}
-                  <circle
-                    cx="125"
-                    cy="125"
-                    r="90"
-                    stroke={REPORT_REGISTER_COLORS.circle.stroke}
-                    strokeWidth="2"
-                    fill={REPORT_REGISTER_COLORS.circle.fill}
-                  />
+              <div className="flex-1 flex items-center justify-center p-2 min-h-0">
+                <div
+                  ref={containerRef}
+                  className="relative w-full h-full rounded-lg select-none"
+                  style={{
+                    maxWidth: "85%",
+                    aspectRatio: "1/1",
+                  }}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onClick={handleBackgroundClick}
+                >
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 250 250"
+                    preserveAspectRatio="xMidYMid meet"
+                  >
+                    <circle
+                      cx="125"
+                      cy="125"
+                      r="90"
+                      stroke={REPORT_REGISTER_COLORS.circle.stroke}
+                      strokeWidth="2"
+                      fill={REPORT_REGISTER_COLORS.circle.fill}
+                    />
 
-                  {/* 時刻表示 */}
-                  {Array.from({ length: unitNum }).map((_, i) => {
-                    const angle = (i * Math.PI * 2) / unitNum - Math.PI / 2;
-                    const radius = 110;
-                    const x = 125 + radius * Math.cos(angle);
-                    const y = 125 + radius * Math.sin(angle);
-                    const isStartTime = i === 0;
+                    {Array.from({ length: unitNum }).map((_, i) => {
+                      const angle = (i * Math.PI * 2) / unitNum - Math.PI / 2;
+                      const radius = 110;
+                      const x = 125 + radius * Math.cos(angle);
+                      const y = 125 + radius * Math.sin(angle);
+                      const isStartTime = i === 0;
 
-                    return (
-                      <g key={i}>
-                        {isStartTime && (
+                      return (
+                        <g key={i}>
+                          {isStartTime && (
+                            <text
+                              x={x}
+                              y={y - 14}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fill={REPORT_REGISTER_COLORS.time.startTime}
+                              fontSize="10"
+                              className="font-bold"
+                            >
+                              勤務開始
+                            </text>
+                          )}
                           <text
                             x={x}
-                            y={y - 14}
+                            y={y}
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            fill={REPORT_REGISTER_COLORS.time.startTime}
-                            fontSize="10"
-                            className="font-bold"
+                            fill={REPORT_REGISTER_COLORS.time.text}
+                            fontSize="12"
+                            className="font-semibold"
                           >
-                            勤務開始
+                            {getTimeLabel(i)}
                           </text>
-                        )}
-                        <text
-                          x={x}
-                          y={y}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          fill={REPORT_REGISTER_COLORS.time.text}
-                          fontSize="12"
-                          className="font-semibold"
-                        >
-                          {getTimeLabel(i)}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* 目盛り */}
-                  {Array.from({ length: unitNum * getSubdivisions() }).map(
-                    (_, i) => {
-                      const angle =
-                        (i * Math.PI * 2) / (unitNum * getSubdivisions());
-                      const isMainTick = i % getSubdivisions() === 0;
-                      return (
-                        <line
-                          key={i}
-                          x1={125 + (isMainTick ? 85 : 87) * Math.cos(angle)}
-                          y1={125 + (isMainTick ? 85 : 87) * Math.sin(angle)}
-                          x2={125 + 90 * Math.cos(angle)}
-                          y2={125 + 90 * Math.sin(angle)}
-                          stroke={
-                            isMainTick
-                              ? REPORT_REGISTER_COLORS.ticks.main
-                              : REPORT_REGISTER_COLORS.ticks.sub
-                          }
-                          strokeWidth={isMainTick ? "2" : "1"}
-                        />
+                        </g>
                       );
-                    }
-                  )}
+                    })}
 
-                  {/* セクター */}
-                  {sectors.map((sector, i) => (
-                    <Sector
-                      key={i + "sector"}
-                      startAngle={sector.startAngle}
-                      endAngle={sector.endAngle}
-                      color={sector.color}
-                      x={125}
-                      y={125}
-                      radius={90}
-                      isSectorDragging={
-                        isDraggingSector && selectedSector === sector.id
+                    {Array.from({ length: unitNum * getSubdivisions() }).map(
+                      (_, i) => {
+                        const angle =
+                          (i * Math.PI * 2) / (unitNum * getSubdivisions());
+                        const isMainTick = i % getSubdivisions() === 0;
+                        return (
+                          <line
+                            key={i}
+                            x1={125 + (isMainTick ? 85 : 87) * Math.cos(angle)}
+                            y1={125 + (isMainTick ? 85 : 87) * Math.sin(angle)}
+                            x2={125 + 90 * Math.cos(angle)}
+                            y2={125 + 90 * Math.sin(angle)}
+                            stroke={
+                              isMainTick
+                                ? REPORT_REGISTER_COLORS.ticks.main
+                                : REPORT_REGISTER_COLORS.ticks.sub
+                            }
+                            strokeWidth={isMainTick ? "2" : "1"}
+                          />
+                        );
                       }
-                      isSectorSelected={selectedSector === sector.id}
-                      onSectorClick={(e) => handleSectorClick(e, sector)}
-                      onSectorMouseDown={(e) =>
-                        handleSectorMouseDown(e, sector)
-                      }
-                      onHandleMouseDown={(e, type) =>
-                        handleHandleMouseDown(e, sector.id, type)
-                      }
-                    />
-                  ))}
+                    )}
 
-                  {/* プレビュー */}
-                  {dragPreview && (
-                    <path
-                      d={describeArc(
-                        125,
-                        125,
-                        90,
-                        dragPreview.sector.startAngle,
-                        dragPreview.sector.endAngle
-                      )}
-                      fill={
-                        dragPreview.valid
-                          ? REPORT_REGISTER_COLORS.preview.valid
-                          : REPORT_REGISTER_COLORS.preview.invalid
-                      }
-                      className="pointer-events-none"
-                    />
-                  )}
-                </svg>
+                    {sectors.map((sector, i) => (
+                      <Sector
+                        key={i + "sector"}
+                        startAngle={sector.startAngle}
+                        endAngle={sector.endAngle}
+                        color={sector.color}
+                        x={125}
+                        y={125}
+                        radius={90}
+                        isSectorDragging={
+                          isDraggingSector && selectedSector === sector.id
+                        }
+                        isSectorSelected={selectedSector === sector.id}
+                        onSectorClick={(e) => handleSectorClick(e, sector)}
+                        onSectorMouseDown={(e) =>
+                          handleSectorMouseDown(e, sector)
+                        }
+                        onHandleMouseDown={(e, type) =>
+                          handleHandleMouseDown(e, sector.id, type)
+                        }
+                      />
+                    ))}
+
+                    {dragPreview && (
+                      <path
+                        d={describeArc(
+                          125,
+                          125,
+                          90,
+                          dragPreview.sector.startAngle,
+                          dragPreview.sector.endAngle
+                        )}
+                        fill={
+                          dragPreview.valid
+                            ? REPORT_REGISTER_COLORS.preview.valid
+                            : REPORT_REGISTER_COLORS.preview.invalid
+                        }
+                        className="pointer-events-none"
+                      />
+                    )}
+                  </svg>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-6 min-w-[200px]">
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-400">
+            <div className="flex flex-col w-full lg:w-[400px] flex-shrink-0">
+              <div className="p-2">
+                <h3 className="text-sm font-semibold text-gray-400 mb-1">
                   固定項目
                 </h3>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-1">
                   {FIXED_TASKS.map((task) => (
                     <div
                       key={task.task_cd}
                       draggable
                       onDragStart={(e) => handleTaskDragStart(task)}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
+                      className="flex items-center gap-2 shadow-md px-4 py-2 rounded cursor-move hover:bg-gray-200 transition-colors"
                     >
                       <div
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: task.color }}
                       />
-                      <span className="text-sm text-gray-200">{task.name}</span>
+                      <span className="text-sm text-gray-500">{task.name}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-400">
+              <div className="flex-1 overflow-auto p-2">
+                <h3 className="text-sm font-semibold text-gray-500 mb-1">
                   タスク一覧
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {tasks
                     .filter((task) => !task.isFixed)
                     .map((task) => (
@@ -601,112 +631,55 @@ const ReportRegisterPage = () => {
                         key={task.task_cd}
                         draggable
                         onDragStart={() => handleTaskDragStart(task)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded shadow-md cursor-move hover:bg-gray-200 transition-colors"
                       >
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: task.color }}
-                        />
-                        <span className="text-sm text-gray-200">
+                        <span className="text-sm text-gray-500">
                           {task.name}
                         </span>
                       </div>
                     ))}
                 </div>
-                <Pagination
-                  pageSize={pagination}
-                  current={offset / pagination + 1}
-                  total={total}
-                  onChange={(page, pageSize) => {
-                    setpagination(pageSize);
-                    setoffset((page - 1) * pageSize);
-                  }}
-                />
+                <div className="mt-2">
+                  <Pagination
+                    pageSize={pagination}
+                    current={offset / pagination + 1}
+                    total={total}
+                    onChange={(page, pageSize) => {
+                      setpagination(pageSize);
+                      setoffset((page - 1) * pageSize);
+                    }}
+                    size="small"
+                  />
+                </div>
+                <div className="flex justify-end p-2 ">
+                  <Button
+                    type="primary"
+                    onClick={handleSubmit}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    確定
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex justify-end mt-4">
-            <Button
-              type="primary"
-              onClick={handleSubmit}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              確定
-            </Button>
           </div>
         </>
       )}
 
-      <Modal
-        title="タスク詳細"
-        open={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={() => setIsModalVisible(false)}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Check
-            </label>
-            <TextArea
-              value={selectedSectorDetails.check}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setSelectedSectorDetails({
-                  ...selectedSectorDetails,
-                  check: e.target.value,
-                })
-              }
-              rows={2}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Do
-            </label>
-            <TextArea
-              value={selectedSectorDetails.do}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setSelectedSectorDetails({
-                  ...selectedSectorDetails,
-                  do: e.target.value,
-                })
-              }
-              rows={2}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Plan
-            </label>
-            <TextArea
-              value={selectedSectorDetails.plan}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setSelectedSectorDetails({
-                  ...selectedSectorDetails,
-                  plan: e.target.value,
-                })
-              }
-              rows={2}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Action
-            </label>
-            <TextArea
-              value={selectedSectorDetails.action}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setSelectedSectorDetails({
-                  ...selectedSectorDetails,
-                  action: e.target.value,
-                })
-              }
-              rows={2}
-            />
-          </div>
-        </div>
-      </Modal>
+      <EditSectorModal
+        ModalProps={{
+          open: isModalVisible,
+          onOk: handleModalOk,
+          onCancel: () => setIsModalVisible(false),
+        }}
+        SectorDetail={selectedSectorDetails}
+        onChange={(value, type) => {
+          setSelectedSectorDetails({
+            ...selectedSectorDetails,
+            [type]: value,
+          });
+        }}
+      />
     </div>
   );
 };

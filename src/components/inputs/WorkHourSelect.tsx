@@ -7,7 +7,7 @@ interface WorkHourSelectProps {
 
 const WorkHourSelect = ({ unitNum, setUnitNum }: WorkHourSelectProps) => {
   return (
-    <div>
+    <div className="flex items-center gap-2">
       <label className="block text-sm font-medium text-gray-700">
         勤務時間
       </label>

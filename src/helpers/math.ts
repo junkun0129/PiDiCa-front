@@ -85,46 +85,46 @@ export const timeToMinutes = (time: string | undefined | null): number => {
   if (!time || typeof time !== "string") return 0;
 
   try {
-    const [hours, minutes] = time.split(":").map(Number);
-    if (isNaN(hours) || isNaN(minutes)) return 0;
-    return hours * 60 + minutes;
+    if (time.includes("-")) {
+      const [hours, minutes] = time.split(":").map(Number);
+      console.log(hours, minutes);
+      return hours * 60 + minutes;
+    } else {
+      return parseInt(time);
+    }
   } catch (error) {
     console.error("Invalid time format:", time);
     return 0;
   }
 };
 
-// 角度を計算する関数
 export const calculateArc = (
   startTime: string,
   endTime: string,
-  totalHours: number
-) => {
-  const totalMinutes = totalHours * 60;
-  console.log(startTime);
+  totalHours: number,
+  startHour: number,
+  radius: number
+): string => {
   const start = timeToMinutes(startTime);
   const end = timeToMinutes(endTime);
 
-  // 開始角度と終了角度を計算（12時の位置を0度として）
-  const startAngle = (start / totalMinutes) * 360 - 90;
-  const endAngle = (end / totalMinutes) * 360 - 90;
+  // 開始時間からの相対位置を計算
+  const relativeStart = start - startHour;
+  const relativeEnd = end - startHour;
 
-  // SVGのArcパスを生成
-  const radius = 50;
-  const startRad = (startAngle * Math.PI) / 180;
-  const endRad = (endAngle * Math.PI) / 180;
+  // 角度に変換（12時位置が0度、時計回り）
+  const startAngle = (relativeStart / totalHours) * Math.PI * 2 - Math.PI / 2;
+  const endAngle = (relativeEnd / totalHours) * Math.PI * 2 - Math.PI / 2;
 
-  const x1 = radius * Math.cos(startRad);
-  const y1 = radius * Math.sin(startRad);
-  const x2 = radius * Math.cos(endRad);
-  const y2 = radius * Math.sin(endRad);
+  // 円弧の開始点と終了点（中心が0,0の座標系で計算）
+  const startX = radius * Math.cos(startAngle);
+  const startY = radius * Math.sin(startAngle);
+  const endX = radius * Math.cos(endAngle);
+  const endY = radius * Math.sin(endAngle);
 
   // 大きい弧かどうか（180度以上かどうか）
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  const largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
 
-  return {
-    path: `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-    startPoint: `${x1},${y1}`,
-    endPoint: `${x2},${y2}`,
-  };
+  // SVGのパスを生成（中心点(0,0)を基準に）
+  return `M 0 0 L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
 };
