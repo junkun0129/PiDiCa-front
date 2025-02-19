@@ -49,14 +49,24 @@ export const createReportApi = async (
 };
 type GetReportListApiReq = {
   date: string;
-  offset: number;
-  pagination: number;
 };
-
+export type ReportView = {
+  report_cd: string;
+  report_created_at: string;
+  report_date: string;
+  report_status: string;
+  report_workhour: string;
+  reportitems: any[];
+};
+type GetReportListApiRes = {
+  result: string;
+  data: { [key: string]: ReportView };
+  total: number;
+};
 export const getReportListApi = async (
   req: GetReportListApiReq
-): Promise<any> => {
-  const url = `/report/list?offset=${req.offset}&pagination=${req.pagination}&date=${req.date}`;
+): Promise<GetReportListApiRes> => {
+  const url = `/report/list?&date=${req.date}`;
   const res = await fetchRequest(url, "get");
   return res;
 };

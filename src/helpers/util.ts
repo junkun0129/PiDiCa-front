@@ -11,7 +11,9 @@ export const getCookie = (name: string) => {
   }
   return "";
 };
-
+export const padZero = (num: number): string => {
+  return num.toString().padStart(2, "0");
+};
 export const setCookie = (name: string, value: string, days: number = 1) => {
   const date = new Date();
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);

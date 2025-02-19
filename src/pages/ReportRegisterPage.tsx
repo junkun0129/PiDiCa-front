@@ -1,172 +1,57 @@
 import React, { useEffect, useRef, useState } from "react";
-import { describeArc, getPointOnCircle } from "../helpers/math";
-import { Modal, Input, Button, Result } from "antd";
+import {
+  checkSectorCollision,
+  describeArc,
+  getPointOnCircle,
+  normalizeAngle,
+} from "../helpers/math";
+import { Modal, Input, Button, Result, Pagination } from "antd";
 import TextArea from "antd/lib/input/TextArea";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { appRoute, QURERY_PARAM } from "../const";
+import {
+  appRoute,
+  FIXED_TASKS,
+  QURERY_PARAM,
+  REPORT_REGISTER_COLORS,
+} from "../const";
 import { createReportApi } from "../api/report.api";
-
-interface Task {
-  id: string;
+import { getTaskListApi } from "../api/task.api";
+import WorkHourSelect from "../components/inputs/WorkHourSelect";
+import TimeUnitChanger from "../components/inputs/TimeUnitChanger";
+import WorkStartTimeChanger from "../components/inputs/WorkStartTimeChanger";
+import Sector from "../components/shapes/Sector";
+export interface Task {
   name: string;
   color: string;
   isFixed?: boolean;
   task_cd?: string;
 }
 
-interface Sector {
+export interface Sector {
   id: string;
+  task_name: string;
+  task_cd: string;
   startAngle: number;
   endAngle: number;
   color: string;
 }
 
-interface SectorDetail {
+export interface SectorDetail {
   check: string;
   do: string;
   plan: string;
   action: string;
 }
 
-interface DragPreview {
+export interface DragPreview {
   sector: Sector;
   valid: boolean;
 }
 
-const MAX_ANGLE = 2 * Math.PI; // 360°
-
-const COLORS = {
-  background: "#1A1A1A", // よりダークな背景
-  circle: {
-    fill: "#242424", // 深みのあるグレー
-    stroke: "#404040", // ボーダー用のミディアムグレー
-  },
-  time: {
-    text: "#9CA3AF", // 柔らかいグレー
-    startTime: "#D1D5DB", // 勤務開始時間用の明るめのグレー
-  },
-  ticks: {
-    main: "#4B5563", // メインの目盛り
-    sub: "#374151", // サブの目盛り
-  },
-  handles: {
-    fill: "#E5E7EB", // ハンドルの塗り
-    stroke: "#6B7280", // ハンドルの縁取り
-  },
-  preview: {
-    valid: "rgba(209, 213, 219, 0.5)", // 有効なプレビュー
-    invalid: "rgba(239, 68, 68, 0.3)", // 無効なプレビュー
-  },
-  sectors: [
-    "#3B82F6", // ブルー
-    "#10B981", // グリーン
-    "#8B5CF6", // パープル
-    "#F59E0B", // オレンジ
-    "#EC4899", // ピンク
-    "#6366F1", // インディゴ
-  ],
-};
-
-const normalizeAngle = (angle: number): number => {
-  let normalized = angle % (Math.PI * 2);
-  return normalized < -Math.PI ? normalized + Math.PI * 2 : normalized;
-};
-
-const checkSectorCollision = (sector1: Sector, sector2: Sector): boolean => {
-  const normalizeToPositive = (angle: number): number => {
-    let normalized = angle % (Math.PI * 2);
-    return normalized < 0 ? normalized + Math.PI * 2 : normalized;
-  };
-
-  const s1Start = normalizeToPositive(sector1.startAngle);
-  const s1End = normalizeToPositive(sector1.endAngle);
-  const s2Start = normalizeToPositive(sector2.startAngle);
-  const s2End = normalizeToPositive(sector2.endAngle);
-
-  // セクターの実際の範囲を計算
-  const getRange = (start: number, end: number): number => {
-    if (end < start) return end + Math.PI * 2 - start;
-    return end - start;
-  };
-
-  const s1Range = getRange(s1Start, s1End);
-  const s2Range = getRange(s2Start, s2End);
-
-  // 一周以上のセクターは許可しない
-  if (s1Range >= Math.PI * 2 || s2Range >= Math.PI * 2) return true;
-
-  // 境界が一致する場合は衝突とみなす
-  if (Math.abs(s1Start - s2Start) < 0.01 || Math.abs(s1End - s2End) < 0.01)
-    return true;
-
-  // セクターが12時をまたぐ場合の処理
-  if (s1End < s1Start) {
-    return !(s2End <= s1Start && s2Start >= s1End);
-  }
-  if (s2End < s2Start) {
-    return !(s1End <= s2Start && s1Start >= s2End);
-  }
-
-  // 通常の重なりチェック
-  return !(s1End <= s2Start || s1Start >= s2End);
-};
-
 const ReportRegisterPage = () => {
-  // 固定タスクの定義
-  const FIXED_TASKS: Task[] = [
-    {
-      id: "break",
-      name: "休憩",
-      color: "#9CA3AF", // グレー
-      isFixed: true,
-      task_cd: "BREAK_001", // 固定のtask_cd
-    },
-    {
-      id: "meeting",
-      name: "打合せ",
-      color: "#6366F1", // インディゴ
-      isFixed: true,
-      task_cd: "MEET_001",
-    },
-    {
-      id: "desk-work",
-      name: "事務作業",
-      color: "#10B981", // グリーン
-      isFixed: true,
-      task_cd: "DESK_001",
-    },
-    {
-      id: "training",
-      name: "研修",
-      color: "#F59E0B", // オレンジ
-      isFixed: true,
-      task_cd: "TRAIN_001",
-    },
-    {
-      id: "commute",
-      name: "移動",
-      color: "#8B5CF6", // パープル
-      isFixed: true,
-      task_cd: "MOVE_001",
-    },
-  ];
-
   // 状態の型を明示的に指定
   const [tasks, setTasks] = useState<Task[]>(FIXED_TASKS);
   const navigate = useNavigate();
-  // APIからタスクを取得する処理
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        // const apiTasks = await fetchTasksFromAPI();
-        // setTasks([...FIXED_TASKS, ...apiTasks]);
-      } catch (error) {
-        console.error("Failed to fetch tasks:", error);
-      }
-    };
-
-    // fetchTasks();
-  }, []);
 
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
@@ -182,8 +67,10 @@ const ReportRegisterPage = () => {
   const [dragPreviewAngle, setDragPreviewAngle] = useState<number | null>(null);
   const [isDraggingSector, setIsDraggingSector] = useState(false);
   const [isReportSubmmited, setisReportSubmmited] = useState(false);
-  const granularityOptions = [5, 10, 15, 30, 60];
 
+  const [offset, setoffset] = useState(0);
+  const [total, settotal] = useState(0);
+  const [pagination, setpagination] = useState(10);
   const [startHour, setStartHour] = useState(9);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -202,10 +89,34 @@ const ReportRegisterPage = () => {
   const getAngleStep = () => (Math.PI * 2) / unitNum;
   const getSubdivisions = () => 60 / minuteGranularity;
 
-  const snapToValidAngle = (angle: number) => {
-    const step = getAngleStep() / getSubdivisions();
-    return Math.round(angle / step) * step;
-  };
+  // APIからタスクを取得する処理
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const res = await getTaskListApi({
+          offset,
+          pagination,
+          sort: "asc;created_at",
+          project: "",
+        });
+        console.log(res);
+        // const apiTasks = await fetchTasksFromAPI();
+        const newTasks: Task[] = res.data.map((item: any) => {
+          return {
+            name: item.task_name,
+            color: "#000000",
+            isFixed: false,
+            task_cd: item.task_cd,
+          };
+        });
+        setTasks([...FIXED_TASKS, ...newTasks]);
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+      }
+    };
+
+    fetchTasks();
+  }, []);
 
   const formatTime = (angle: number): string => {
     // 角度を時計回りに変換（-π/2 が開始時刻）
@@ -373,10 +284,12 @@ const ReportRegisterPage = () => {
     const sectorWidth = (Math.PI * 2) / unitNum;
 
     const newSector: Sector = {
-      id: crypto.randomUUID(),
+      id: draggedTask.task_cd || "",
+      task_name: "",
       startAngle: angle,
       endAngle: normalizeAngle(angle + sectorWidth),
       color: draggedTask.color,
+      task_cd: draggedTask.task_cd || "",
     };
 
     const isValid = sectors.every(
@@ -436,10 +349,9 @@ const ReportRegisterPage = () => {
     setIsModalVisible(false);
   };
 
-  // 確定ボタンの処理
+  // 確定ボタンの処理を更新
   const handleSubmit = async () => {
     const reportItems = sectors.map((sector) => {
-      const task = tasks.find((t) => t.id === sector.id);
       const details = sectorDetails[sector.id] || {
         check: "",
         do: "",
@@ -448,7 +360,7 @@ const ReportRegisterPage = () => {
       };
 
       return {
-        task_cd: task?.task_cd || "",
+        task_cd: sector.task_cd, // task_cdを使用
         starttime: formatTime(sector.startAngle),
         endtime: formatTime(sector.endAngle),
         ...details,
@@ -515,55 +427,15 @@ const ReportRegisterPage = () => {
           <div className="flex gap-4">
             <div className="flex flex-col gap-4">
               <div className="flex gap-4 items-center">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    分割数
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={unitNum}
-                    onChange={(e) =>
-                      setUnitNum(Math.max(1, parseInt(e.target.value) || 1))
-                    }
-                    className="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    時間の粒度
-                  </label>
-                  <select
-                    value={minuteGranularity}
-                    onChange={(e) =>
-                      setMinuteGranularity(parseInt(e.target.value))
-                    }
-                    className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  >
-                    {granularityOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}分
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    勤務開始時間
-                  </label>
-                  <select
-                    value={startHour}
-                    onChange={(e) => setStartHour(parseInt(e.target.value))}
-                    className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {`${i}:00`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <WorkHourSelect unitNum={unitNum} setUnitNum={setUnitNum} />
+                <TimeUnitChanger
+                  minuteGranularity={minuteGranularity}
+                  setMinuteGranularity={setMinuteGranularity}
+                />
+                <WorkStartTimeChanger
+                  startHour={startHour}
+                  setStartHour={setStartHour}
+                />
               </div>
 
               <div
@@ -581,9 +453,9 @@ const ReportRegisterPage = () => {
                     cx="125"
                     cy="125"
                     r="90"
-                    stroke={COLORS.circle.stroke}
+                    stroke={REPORT_REGISTER_COLORS.circle.stroke}
                     strokeWidth="2"
-                    fill={COLORS.circle.fill}
+                    fill={REPORT_REGISTER_COLORS.circle.fill}
                   />
 
                   {/* 時刻表示 */}
@@ -602,7 +474,7 @@ const ReportRegisterPage = () => {
                             y={y - 14}
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            fill={COLORS.time.startTime}
+                            fill={REPORT_REGISTER_COLORS.time.startTime}
                             fontSize="10"
                             className="font-bold"
                           >
@@ -614,7 +486,7 @@ const ReportRegisterPage = () => {
                           y={y}
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          fill={COLORS.time.text}
+                          fill={REPORT_REGISTER_COLORS.time.text}
                           fontSize="12"
                           className="font-semibold"
                         >
@@ -638,7 +510,9 @@ const ReportRegisterPage = () => {
                           x2={125 + 90 * Math.cos(angle)}
                           y2={125 + 90 * Math.sin(angle)}
                           stroke={
-                            isMainTick ? COLORS.ticks.main : COLORS.ticks.sub
+                            isMainTick
+                              ? REPORT_REGISTER_COLORS.ticks.main
+                              : REPORT_REGISTER_COLORS.ticks.sub
                           }
                           strokeWidth={isMainTick ? "2" : "1"}
                         />
@@ -647,64 +521,27 @@ const ReportRegisterPage = () => {
                   )}
 
                   {/* セクター */}
-                  {sectors.map((sector) => (
-                    <g key={sector.id}>
-                      <path
-                        d={describeArc(
-                          125,
-                          125,
-                          90,
-                          sector.startAngle,
-                          sector.endAngle
-                        )}
-                        fill={sector.color}
-                        className="cursor-move"
-                        opacity={
-                          isDraggingSector && selectedSector === sector.id
-                            ? 0.7
-                            : 0.9
-                        }
-                        onClick={(e) => handleSectorClick(e, sector)}
-                        onMouseDown={(e) => handleSectorMouseDown(e, sector)}
-                      />
-                      {selectedSector === sector.id && (
-                        <>
-                          {/* ハンドル */}
-                          {["start", "end"].map((type) => {
-                            const angle =
-                              type === "start"
-                                ? sector.startAngle
-                                : sector.endAngle;
-                            return (
-                              <g key={type} style={{ pointerEvents: "all" }}>
-                                <circle
-                                  cx={125 + 90 * Math.cos(angle)}
-                                  cy={125 + 90 * Math.sin(angle)}
-                                  r="12"
-                                  className="handle-hitbox"
-                                  onMouseDown={(e) =>
-                                    handleHandleMouseDown(
-                                      e,
-                                      sector.id,
-                                      type as "start" | "end"
-                                    )
-                                  }
-                                />
-                                <circle
-                                  cx={125 + 90 * Math.cos(angle)}
-                                  cy={125 + 90 * Math.sin(angle)}
-                                  r="6"
-                                  fill={COLORS.handles.fill}
-                                  stroke={COLORS.handles.stroke}
-                                  strokeWidth="2"
-                                  pointerEvents="none"
-                                />
-                              </g>
-                            );
-                          })}
-                        </>
-                      )}
-                    </g>
+                  {sectors.map((sector, i) => (
+                    <Sector
+                      key={i + "sector"}
+                      startAngle={sector.startAngle}
+                      endAngle={sector.endAngle}
+                      color={sector.color}
+                      x={125}
+                      y={125}
+                      radius={90}
+                      isSectorDragging={
+                        isDraggingSector && selectedSector === sector.id
+                      }
+                      isSectorSelected={selectedSector === sector.id}
+                      onSectorClick={(e) => handleSectorClick(e, sector)}
+                      onSectorMouseDown={(e) =>
+                        handleSectorMouseDown(e, sector)
+                      }
+                      onHandleMouseDown={(e, type) =>
+                        handleHandleMouseDown(e, sector.id, type)
+                      }
+                    />
                   ))}
 
                   {/* プレビュー */}
@@ -719,8 +556,8 @@ const ReportRegisterPage = () => {
                       )}
                       fill={
                         dragPreview.valid
-                          ? COLORS.preview.valid
-                          : COLORS.preview.invalid
+                          ? REPORT_REGISTER_COLORS.preview.valid
+                          : REPORT_REGISTER_COLORS.preview.invalid
                       }
                       className="pointer-events-none"
                     />
@@ -737,7 +574,7 @@ const ReportRegisterPage = () => {
                 <div className="space-y-2">
                   {FIXED_TASKS.map((task) => (
                     <div
-                      key={task.id}
+                      key={task.task_cd}
                       draggable
                       onDragStart={(e) => handleTaskDragStart(task)}
                       className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
@@ -761,9 +598,9 @@ const ReportRegisterPage = () => {
                     .filter((task) => !task.isFixed)
                     .map((task) => (
                       <div
-                        key={task.id}
+                        key={task.task_cd}
                         draggable
-                        onDragStart={(e) => handleTaskDragStart(task)}
+                        onDragStart={() => handleTaskDragStart(task)}
                         className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded cursor-move hover:bg-gray-700 transition-colors"
                       >
                         <div
@@ -776,6 +613,15 @@ const ReportRegisterPage = () => {
                       </div>
                     ))}
                 </div>
+                <Pagination
+                  pageSize={pagination}
+                  current={offset / pagination + 1}
+                  total={total}
+                  onChange={(page, pageSize) => {
+                    setpagination(pageSize);
+                    setoffset((page - 1) * pageSize);
+                  }}
+                />
               </div>
             </div>
           </div>
