@@ -20,6 +20,19 @@ type getTaskApiRes = {
   }[];
 };
 
+export type ReportItemView = {
+  ri_cd: string;
+  report_cd: string;
+  task_cd: string;
+  ri_starttime: number;
+  ri_endtime: number;
+  ri_check: string;
+  ri_do: string;
+  ri_action: string;
+  ri_plan: string;
+  created_at: string;
+};
+
 export const getTaskListApi = async (
   req: getTaskApiReq
 ): Promise<getTaskApiRes> => {
@@ -64,5 +77,41 @@ export const deleteTaskApi = async (
 ): Promise<DeleteTaskApiRes> => {
   const url = "/task/delete";
   const response = await fetchRequest(url, "post", req.body);
+  return response;
+};
+
+export type GetReportItemDatesReq = {
+  task_cd: string;
+};
+
+export type GetReportItemDatesRes = {
+  result: string;
+  data: { [key: string]: string[] };
+};
+
+export const getReportItemApi = async (
+  req: GetReportItemDatesReq
+): Promise<GetReportItemDatesRes> => {
+  const url = `/task/items/dates?task_cd=${req.task_cd}`;
+  const response = await fetchRequest(url, "get");
+  return response;
+};
+
+export type GetReportItemDetailReq = {
+  task_cd: string;
+  starttime: number;
+  endtime: number;
+  date: string;
+};
+export type GetReportItemDetailRes = {
+  result: string;
+  data: ReportItemView;
+};
+
+export const getReportItemDetailApi = async (
+  req: GetReportItemDetailReq
+): Promise<GetReportItemDetailRes> => {
+  const url = `/task/items/detail?task_cd=${req.task_cd}&date=${req.date}&starttime=${req.starttime}&endtime=${req.endtime}`;
+  const response = await fetchRequest(url, "get");
   return response;
 };

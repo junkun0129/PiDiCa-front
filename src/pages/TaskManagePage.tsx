@@ -24,6 +24,7 @@ import TextArea from "antd/es/input/TextArea";
 import { TASK_STATUS } from "../const";
 import { formatDate } from "../helpers/util";
 import { getProjectEntriesApi, ProjectEntry } from "../api/project.api";
+import TaskDetailModal from "../components/modals/TaskDetailModal";
 
 const dataIndex = {
   name: "name",
@@ -97,6 +98,24 @@ const TaskManagePage = () => {
   const [selectedRowKeys, setselectedRowKeys] = useState<string[]>([]);
   const [total, settotal] = useState(0);
 
+  const [selectedTask, setselectedTask] = useState<{
+    task_cd: string;
+    task_name: string;
+    created_at: string;
+    updated_at: string;
+    project_name: string;
+    status: string;
+    task_detail: string;
+  }>({
+    task_cd: "",
+    task_name: "",
+    created_at: "",
+    updated_at: "",
+    project_name: "",
+    status: "",
+    task_detail: "",
+  });
+  const [isModalOpen, setisModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [tabItems, settabItems] = useState([
     {
@@ -265,6 +284,21 @@ const TaskManagePage = () => {
         dataSource={dataSource}
         scroll={{ x: 1000 }}
         columns={columns}
+        onRow={(record) => ({
+          onClick: () => {
+            console.log("Row clicked:", record);
+            setisModalOpen(true);
+            setselectedTask({
+              task_cd: record.key,
+              task_name: record.name,
+              created_at: record.created,
+              updated_at: record.updated,
+              project_name: record.project_name,
+              status: record.status,
+              task_detail: record.detail,
+            });
+          },
+        })}
         rowSelection={{
           selectedRowKeys,
           onChange: (selectedRowKeys) => {
@@ -282,7 +316,24 @@ const TaskManagePage = () => {
         }}
       />
 
-      <Modal></Modal>
+      <TaskDetailModal
+        ModalProps={{
+          open: isModalOpen,
+          onCancel: () => {
+            setisModalOpen(false);
+            setselectedTask({
+              task_cd: "",
+              task_name: "",
+              created_at: "",
+              updated_at: "",
+              project_name: "",
+              status: "",
+              task_detail: "",
+            });
+          },
+        }}
+        selectedTask={selectedTask}
+      />
     </Space>
   );
 };

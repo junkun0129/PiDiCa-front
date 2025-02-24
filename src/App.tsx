@@ -8,6 +8,7 @@ import ProjectManagePage from "./pages/ProjectManagePage";
 import UserManagePage from "./pages/UserManagePage";
 import SigninPage from "./pages/SigninPage";
 import SignupPage from "./pages/SignupPage";
+import AttendantManagePage from "./pages/AttendantManagePage";
 function App() {
   return (
     <>
@@ -28,7 +29,10 @@ function App() {
           />
 
           <Route path={appRoute.userManage} element={<UserManagePage />} />
-          <Route path={appRoute.attendManage} element={<UserManagePage />} />
+          <Route
+            path={appRoute.attendManage}
+            element={<AttendantManagePage />}
+          />
           <Route path={appRoute.setting} element={<UserManagePage />} />
         </Route>
       </Routes>

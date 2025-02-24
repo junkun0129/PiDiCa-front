@@ -107,3 +107,19 @@ export const FIXED_TASKS: Task[] = [
     task_cd: "MOVE_001",
   },
 ];
+
+export const ATTEND_SPECIAL_STATUS = {
+  なし: "0",
+  有給: "1",
+  欠勤: "2",
+  遅刻: "3",
+  早退: "4",
+};
+export const ATTEND_SPECIAL_STATUS_REVERSE = {
+  "0": "なし",
+  "1": "有給",
+  "2": "欠勤",
+  "3": "遅刻",
+  "4": "早退",
+  "5": "欠勤",
+};
