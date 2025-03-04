@@ -238,6 +238,7 @@ const clockEditor = (() => {
       if (cell) cell.innerHTML = value || "";
     },
     openEditor: (cell, value, x, y, instance) => {
+      console.log(x, y);
       instance.parent.input.innerHTML = "";
       (instance as any).parent.input.setAttribute("contentEditable", false);
       instance.parent.input.appendChild(editor);
@@ -251,7 +252,7 @@ const clockEditor = (() => {
       hourSelect.focus();
       closeCallback = () => instance.closeEditor(cell, true);
     },
-    closeEditor: (cell, save) => {
+    closeEditor: (_, save) => {
       if (save) return `${hourSelect.value}:${minuteSelect.value}`;
       return "";
     },

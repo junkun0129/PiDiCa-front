@@ -399,7 +399,7 @@ const ReportRegisterPage = () => {
           status="success"
           subTitle={
             <Button
-              onClick={(e) => {
+              onClick={() => {
                 navigate(appRoute.reportManage);
               }}
             >
@@ -573,7 +573,7 @@ const ReportRegisterPage = () => {
                     <div
                       key={task.task_cd}
                       draggable
-                      onDragStart={(e) => handleTaskDragStart(task)}
+                      onDragStart={() => handleTaskDragStart(task)}
                       className="flex items-center gap-2 shadow-md px-4 py-2 rounded cursor-move hover:bg-gray-200 transition-colors"
                     >
                       <div

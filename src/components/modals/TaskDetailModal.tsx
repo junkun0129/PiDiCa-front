@@ -64,7 +64,7 @@ const TaskDetailModal = ({
       <p>詳細: {task_detail}</p>
       <div>
         {Object.keys(dates).length > 0 &&
-          Object.entries(dates).map(([key, value], i) => {
+          Object.entries(dates).map(([key, value]) => {
             return (
               <>
                 <div>{key}</div>

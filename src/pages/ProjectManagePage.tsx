@@ -9,7 +9,7 @@ import {
   TableColumnsType,
   Typography,
 } from "antd";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   createTaskApi,
   CreateTaskApiReq,
@@ -17,7 +17,7 @@ import {
 } from "../api/task.api";
 import TextArea from "antd/es/input/TextArea";
 import { formatDate } from "../helpers/util";
-import { getProjectListApi, ProjectListView } from "../api/project.api";
+import { getProjectListApi } from "../api/project.api";
 
 const dataIndex = {
   project_name: "project_name",
