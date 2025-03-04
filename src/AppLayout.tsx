@@ -7,13 +7,16 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { getCookie } from "./helpers/util";
 import AppHeader from "./components/layouts/AppHeader";
 import AppSider from "./components/layouts/AppSider";
+import { useEffect } from "react";
 
 const AppLayout = () => {
   const navigate = useNavigate();
   const isSigned = getCookie(COOKIES.isLoggedin);
-  if (!isSigned) {
-    navigate("/signin");
-  }
+  useEffect(() => {
+    if (!isSigned) {
+      navigate("/signin");
+    }
+  }, []);
 
   return (
     <Layout className="h-screen w-full overflow-hidden">
