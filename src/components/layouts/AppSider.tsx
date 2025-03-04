@@ -58,7 +58,7 @@ const AppSider = () => {
   ];
 
   const [selectedKey, setselectedKey] = useState(reportManage);
-  const { isSidebarOpen, setIsSidebarOpen } = useAppContext();
+  const { isSidebarOpen } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
 

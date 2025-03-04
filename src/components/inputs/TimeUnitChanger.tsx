@@ -1,5 +1,3 @@
-import React from "react";
-
 interface TimeUnitChangerProps {
   minuteGranularity: number;
   setMinuteGranularity: (granularity: number) => void;

@@ -1,9 +1,5 @@
-import React, { useEffect, useState } from "react";
-import {
-  getReportItemApi,
-  getReportItemDetailApi,
-  ReportItemView,
-} from "../../api/task.api";
+import { useEffect, useState } from "react";
+import { getReportItemDetailApi, ReportItemView } from "../../api/task.api";
 type TaskAcordionNodeProps = {
   isNodeActive: boolean;
   timeRange: string;

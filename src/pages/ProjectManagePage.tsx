@@ -1,7 +1,5 @@
 import {
-  App,
   Button,
-  Flex,
   Form,
   Input,
   Modal,
@@ -9,20 +7,15 @@ import {
   Space,
   Table,
   TableColumnsType,
-  Tabs,
   Typography,
 } from "antd";
 import React, { useEffect, useState } from "react";
-import { damyTaskListData } from "../data/task";
-import Search from "antd/es/transfer/search";
 import {
   createTaskApi,
   CreateTaskApiReq,
   deleteTaskApi,
-  getTaskListApi,
 } from "../api/task.api";
 import TextArea from "antd/es/input/TextArea";
-import { TASK_STATUS } from "../const";
 import { formatDate } from "../helpers/util";
 import { getProjectListApi, ProjectListView } from "../api/project.api";
 
@@ -96,21 +89,13 @@ const ProjectManagePage = () => {
   // const { notification, modal } = App.useApp();
   const [modal, contextHolder] = Modal.useModal();
   const [dataSource, setdataSource] = useState<DataType[]>([]);
-  const [columns, setcolumns] = useState(defaultcolumns);
+  const [columns] = useState(defaultcolumns);
   const [pagination, setpagination] = useState(10);
   const [offset, setoffset] = useState(0);
-  const [sort, setsort] = useState("asc;created_at");
-  const [projects, setprojects] = useState<ProjectListView[]>([]);
   const [selectedRowKeys, setselectedRowKeys] = useState<string[]>([]);
-  const [total, settotal] = useState(0);
+  const [total] = useState(0);
 
   const [form] = Form.useForm();
-  const [tabItems, settabItems] = useState([
-    {
-      label: "すべて",
-      key: "",
-    },
-  ]);
 
   useEffect(() => {
     //data fetching
@@ -128,9 +113,6 @@ const ProjectManagePage = () => {
   };
 
   const onCLickCreateTask = () => {
-    console.log("object");
-    console.log(modal);
-
     modal.confirm({
       title: "タスク作成",
       content: (
@@ -175,7 +157,7 @@ const ProjectManagePage = () => {
   const deleteTask = async () => {
     const batchSize = 10;
     let works: Promise<any>[] = [];
-    let taskQueue = [...selectedRowKeys]; // 配列のコピーを作成
+    let taskQueue = [...selectedRowKeys];
 
     for (let i = 0; i < batchSize && taskQueue.length; i++) {
       works.push(
@@ -204,7 +186,6 @@ const ProjectManagePage = () => {
     offset: number;
     pagination: number;
   }) => {
-    console.log("object");
     const res = await getProjectListApi({
       offset,
       pagination,
@@ -215,7 +196,6 @@ const ProjectManagePage = () => {
       res.data.forEach((p) => {
         const updated_at = formatDate(p.updated_at);
         const created_at = formatDate(p.created_at);
-        console.log(created_at);
         newDataSource.push({
           key: p.project_cd,
           project_name: p.project_name,
@@ -231,10 +211,6 @@ const ProjectManagePage = () => {
     }
   };
 
-  const handleTabItemClick = (event: React.MouseEvent<HTMLElement>) => {
-    console.log(event.target);
-    // setproject();
-  };
   return (
     <Space className="h-full w-full" direction="vertical">
       {contextHolder}
@@ -267,8 +243,6 @@ const ProjectManagePage = () => {
           total,
         }}
       />
-
-      <Modal></Modal>
     </Space>
   );
 };

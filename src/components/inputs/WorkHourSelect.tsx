@@ -1,5 +1,3 @@
-import React from "react";
-
 interface WorkHourSelectProps {
   unitNum: number;
   setUnitNum: (unitNum: number) => void;

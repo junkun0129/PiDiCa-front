@@ -1,5 +1,3 @@
-import React from "react";
-
 interface WorkStartTimeChangerProps {
   startHour: number;
   setStartHour: (hour: number) => void;

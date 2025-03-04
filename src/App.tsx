@@ -1,4 +1,4 @@
-import { appRoute, appStyle } from "./const";
+import { appRoute } from "./const";
 import { Route, Routes } from "react-router-dom";
 import AppLayout from "./AppLayout";
 import ReportRegisterPage from "./pages/ReportRegisterPage";

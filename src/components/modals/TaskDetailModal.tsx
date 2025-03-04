@@ -1,5 +1,5 @@
 import { Collapse, Modal, ModalProps } from "antd";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getReportItemApi } from "../../api/task.api";
 import TaskAcordionNode from "../nodes/TaskAcordionNode";
 type TaskDetailModalProps = {

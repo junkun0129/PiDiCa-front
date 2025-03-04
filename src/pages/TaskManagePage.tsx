@@ -1,7 +1,5 @@
 import {
-  App,
   Button,
-  Flex,
   Form,
   Input,
   Modal,
@@ -13,7 +11,6 @@ import {
   Typography,
 } from "antd";
 import React, { useEffect, useState } from "react";
-
 import {
   createTaskApi,
   CreateTaskApiReq,
@@ -88,12 +85,12 @@ const TaskManagePage = () => {
   // const { notification, modal } = App.useApp();
   const [modal, contextHolder] = Modal.useModal();
   const [dataSource, setdataSource] = useState<any>([]);
-  const [columns, setcolumns] = useState(defaultcolumns);
+  const [columns] = useState(defaultcolumns);
   const [pagination, setpagination] = useState(10);
   const [offset, setoffset] = useState(0);
-  const [sort, setsort] = useState("asc;created_at");
+  const [sort] = useState("asc;created_at");
 
-  const [selectedProjects, setselectedProjects] = useState("");
+  const [selectedProjects] = useState("");
   const [projectEntries, setprojectEntries] = useState<ProjectEntry[]>([]);
   const [selectedRowKeys, setselectedRowKeys] = useState<string[]>([]);
   const [total, settotal] = useState(0);
@@ -117,25 +114,28 @@ const TaskManagePage = () => {
   });
   const [isModalOpen, setisModalOpen] = useState(false);
   const [form] = Form.useForm();
-  const [tabItems, settabItems] = useState([
+  const [tabItems] = useState([
     {
       label: "すべて",
       key: "",
     },
   ]);
+
   useEffect(() => {
     getProjectEntries();
   }, []);
+
   useEffect(() => {
-    //data fetching
     updateTaskList({ offset, pagination, sort, project: selectedProjects });
   }, [pagination, offset, sort, selectedProjects]);
+
   const getProjectEntries = async () => {
     const res = await getProjectEntriesApi();
     if (res.result === "success") {
       setprojectEntries(res.data);
     }
   };
+
   const createTask = async ({ body }: CreateTaskApiReq) => {
     const res = await createTaskApi({
       body,
@@ -147,9 +147,6 @@ const TaskManagePage = () => {
   };
 
   const onCLickCreateTask = (entries: ProjectEntry[]) => {
-    console.log("object");
-    console.log(modal);
-
     modal.confirm({
       title: "タスク作成",
       content: (

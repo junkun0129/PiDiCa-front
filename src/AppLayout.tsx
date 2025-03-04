@@ -16,11 +16,11 @@ const AppLayout = () => {
   }
 
   return (
-    <Layout className="h-screen overflow-hidden">
+    <Layout className="h-screen w-full overflow-hidden">
       <AppSider />
-      <Content className="flex flex-col min-h-0 px-4">
+      <Content className="flex w-full flex-col min-h-0 px-4">
         <AppHeader />
-        <Card className="flex-1 rounded-lg border-0 shadow-lg overflow-auto">
+        <Card className="flex-1 w-full rounded-lg border-0 shadow-lg overflow-auto">
           <Outlet></Outlet>
         </Card>
       </Content>

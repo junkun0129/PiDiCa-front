@@ -1,5 +1,5 @@
 import { Button, DatePicker, Segmented } from "antd";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { appRoute, QURERY_PARAM, REPORT_MODE } from "../../const";
@@ -74,7 +74,7 @@ const ReportCreateButton = () => {
     });
   };
   return (
-    <>
+    <div className="relative">
       <Button
         onClick={(e) => {
           e.stopPropagation();
@@ -87,6 +87,7 @@ const ReportCreateButton = () => {
         新規日報作成
       </Button>
       <DatePicker
+        className="absolute"
         showNow={false}
         style={{ visibility: "hidden", width: 0 }}
         open={open}
@@ -117,7 +118,7 @@ const ReportCreateButton = () => {
           />
         )}
       />
-    </>
+    </div>
   );
 };
 

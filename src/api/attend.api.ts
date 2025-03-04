@@ -1,4 +1,4 @@
-import { ApiRes, fetchRequest } from "./helper.api";
+import { fetchRequest } from "./helper.api";
 type GetAttendReq = {
   yearmonth: string;
 };

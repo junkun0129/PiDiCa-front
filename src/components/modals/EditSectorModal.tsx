@@ -2,7 +2,6 @@ import { Modal, ModalProps } from "antd";
 import React from "react";
 import { SectorDetail } from "../../pages/ReportRegisterPage";
 import TextArea from "antd/es/input/TextArea";
-const sectorArray = ["plan", "do", "check", "action"];
 
 type EditSectorModalProps = {
   ModalProps: ModalProps;

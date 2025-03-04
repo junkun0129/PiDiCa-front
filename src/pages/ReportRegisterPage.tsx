@@ -2,11 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   checkSectorCollision,
   describeArc,
-  getPointOnCircle,
   normalizeAngle,
 } from "../helpers/math";
-import { Modal, Input, Button, Result, Pagination } from "antd";
-import TextArea from "antd/lib/input/TextArea";
+import { Button, Result, Pagination } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   appRoute,
@@ -50,7 +48,6 @@ export interface DragPreview {
 }
 
 const ReportRegisterPage = () => {
-  // 状態の型を明示的に指定
   const [tasks, setTasks] = useState<Task[]>(FIXED_TASKS);
   const navigate = useNavigate();
 
@@ -65,12 +62,12 @@ const ReportRegisterPage = () => {
     "start" | "end" | "move" | null
   >(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
-  const [dragPreviewAngle, setDragPreviewAngle] = useState<number | null>(null);
+  const [_, setDragPreviewAngle] = useState<number | null>(null);
   const [isDraggingSector, setIsDraggingSector] = useState(false);
   const [isReportSubmmited, setisReportSubmmited] = useState(false);
 
   const [offset, setoffset] = useState(0);
-  const [total, settotal] = useState(0);
+  const [total] = useState(0);
   const [pagination, setpagination] = useState(10);
   const [startHour, setStartHour] = useState(9);
 
@@ -87,10 +84,8 @@ const ReportRegisterPage = () => {
   >({});
   const [editingSectorId, setEditingSectorId] = useState<string | null>(null);
 
-  const getAngleStep = () => (Math.PI * 2) / unitNum;
   const getSubdivisions = () => 60 / minuteGranularity;
 
-  // APIからタスクを取得する処理
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -100,8 +95,6 @@ const ReportRegisterPage = () => {
           sort: "asc;created_at",
           project: "",
         });
-        console.log(res);
-        // const apiTasks = await fetchTasksFromAPI();
         const newTasks: Task[] = res.data.map((item: any) => {
           return {
             name: item.task_name,
@@ -121,7 +114,6 @@ const ReportRegisterPage = () => {
 
   const formatTime = (angle: number): string => {
     // デバッグ用にコンソール出力
-    console.log("Input angle:", angle);
 
     // 角度を[0, 2π]の範囲に正規化（12時の位置を0とする）
     let normalizedAngle = angle;
@@ -394,34 +386,9 @@ const ReportRegisterPage = () => {
 
     const res = await createReportApi({ body: reportData });
     if (res.result === "success") {
-      console.log("作成に成功しました");
       setisReportSubmmited(true);
     } else {
-      console.log("作成に失敗しました");
     }
-
-    console.log("Report Data:", reportData);
-  };
-
-  // セクターの角度変更時のハンドラーを修正
-  const handleSectorChange = (newStartAngle: number, newEndAngle: number) => {
-    setSectors(
-      sectors.map((sector) =>
-        sector.id === selectedSector
-          ? { ...sector, startAngle: newStartAngle, endAngle: newEndAngle }
-          : sector
-      )
-    );
-
-    // 開始時刻と終了時刻を更新（フォーマットは "HH:00"）
-    const startTime = formatTime(newStartAngle);
-    const endTime = formatTime(newEndAngle);
-
-    setSelectedSectorDetails((prev) => ({
-      ...prev,
-      startTime: startTime,
-      endTime: endTime,
-    }));
   };
 
   return (

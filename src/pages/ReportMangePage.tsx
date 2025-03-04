@@ -1,5 +1,5 @@
-import { Button, DatePicker, Flex, Pagination, Typography } from "antd";
-import { ReactNode, useEffect, useState } from "react";
+import { Badge, Button, Card, Flex, Space, Typography } from "antd";
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import {
   getReportListApi,
@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { appRoute, QURERY_PARAM, REPORT_MODE } from "../const";
 import { formatDate, padZero } from "../helpers/util";
 import { calculateArc } from "../helpers/math";
+import ChangeSelectedMonthButton from "../components/buttons/ChangeSelectedMonthButton";
 const REPORT_STATUS = {
   Plan: "予定",
   Action: "実働",
@@ -29,7 +30,7 @@ const ReportMangePage = () => {
     maxDate: "",
     list: {},
   });
-  const [total, settotal] = useState(0);
+  const [_, settotal] = useState(0);
 
   useEffect(() => {
     if (searchParams.get(QURERY_PARAM.DATE)) {
@@ -70,12 +71,20 @@ const ReportMangePage = () => {
     });
   };
   const CreateButton = ({ date, mode }: { date: string; mode: string }) => {
-    return <Button onClick={() => onClickButton(date, mode)}>作成</Button>;
+    return (
+      <div className="w-full h-full flex justify-center items-center">
+        <Button
+          className=" mt-16 mb-10"
+          onClick={() => onClickButton(date, mode)}
+        >
+          作成
+        </Button>
+      </div>
+    );
   };
 
   const WorkHourPieChart = ({
     data,
-    worktype,
   }: {
     data: ReportView;
     worktype: string;
@@ -83,8 +92,7 @@ const ReportMangePage = () => {
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
     return (
-      <div>
-        <h4>{REPORT_STATUS[worktype as keyof typeof REPORT_STATUS]}</h4>
+      <div className="-mt-2">
         <svg width="200" height="200" viewBox="-100 -100 200 200">
           {/* 背景の円 */}
           <circle
@@ -147,17 +155,18 @@ const ReportMangePage = () => {
 
   return (
     <div className="w-full">
-      <Flex className="w-full" justify="space-between" align="center">
-        <Typography.Title level={3}>
-          {`${selectedDate.split("-")[0]}年${
-            selectedDate.split("-")[1]
-          }月の日報一覧`}
-          <DatePicker
+      <Flex className="w-full px-2" justify="space-between" align="center">
+        <Space>
+          <Typography.Title level={3}>
+            {`${selectedDate.split("-")[0]}年${
+              selectedDate.split("-")[1]
+            }月の日報一覧`}
+          </Typography.Title>
+          <ChangeSelectedMonthButton
             value={dayjs(selectedDate)}
             onChange={handleDateChange}
-            picker="month"
-          ></DatePicker>
-        </Typography.Title>
+          />
+        </Space>
         <ReportCreateButton />
       </Flex>
       <Flex wrap="wrap">
@@ -166,45 +175,58 @@ const ReportMangePage = () => {
           !isNaN(parseInt(reportList.maxDate)) &&
           Array(parseInt(reportList.maxDate))
             .fill("")
-            .map((item, index) => {
+            .map((_, index) => {
               const day = padZero(index + 1);
               const planPropary = `${day}-${REPORT_MODE.PLAN}`;
               const actionPropary = `${day}-${REPORT_MODE.ACTION}`;
-              console.log(planPropary);
               return (
-                <div
-                  className="w-full md:w-[calc(50%-1rem)] shadow-lg rounded-lg m-2 p-4 min-h-[300px]"
-                  key={day}
-                >
-                  <Typography.Title level={5}>{day}日</Typography.Title>
-                  <Flex justify="space-around">
-                    <div>
-                      {planPropary in reportList.list ? (
-                        <WorkHourPieChart
-                          data={reportList.list[planPropary]}
-                          worktype="Plan"
-                        />
-                      ) : (
-                        <CreateButton
-                          date={`${selectedDate}-${day}`}
-                          mode={REPORT_MODE.PLAN}
-                        />
-                      )}
-                    </div>
-                    <div>
-                      {actionPropary in reportList.list ? (
-                        <WorkHourPieChart
-                          data={reportList.list[actionPropary]}
-                          worktype="Action"
-                        />
-                      ) : (
-                        <CreateButton
-                          date={`${selectedDate}-${day}`}
-                          mode={REPORT_MODE.ACTION}
-                        />
-                      )}
-                    </div>
-                  </Flex>
+                <div className="w-full md:w-[calc(50%-1rem)] rounded-lg p-2 min-h-[300px]">
+                  <Badge.Ribbon text={`${day}日`} placement="start">
+                    <Card className="shadow-lg w-full h-full" key={day}>
+                      <Flex className="w-full h-full" justify="space-around">
+                        <div className="w-[50%] h-full mt-2">
+                          <Typography.Title level={4}>
+                            {
+                              REPORT_STATUS[
+                                "Plan" as keyof typeof REPORT_STATUS
+                              ]
+                            }
+                          </Typography.Title>
+                          {planPropary in reportList.list ? (
+                            <WorkHourPieChart
+                              data={reportList.list[planPropary]}
+                              worktype="Plan"
+                            />
+                          ) : (
+                            <CreateButton
+                              date={`${selectedDate}-${day}`}
+                              mode={REPORT_MODE.PLAN}
+                            />
+                          )}
+                        </div>
+                        <div className="w-[50%] h-full mt-2">
+                          <Typography.Title level={4}>
+                            {
+                              REPORT_STATUS[
+                                "Action" as keyof typeof REPORT_STATUS
+                              ]
+                            }
+                          </Typography.Title>
+                          {actionPropary in reportList.list ? (
+                            <WorkHourPieChart
+                              data={reportList.list[actionPropary]}
+                              worktype="Action"
+                            />
+                          ) : (
+                            <CreateButton
+                              date={`${selectedDate}-${day}`}
+                              mode={REPORT_MODE.ACTION}
+                            />
+                          )}
+                        </div>
+                      </Flex>
+                    </Card>
+                  </Badge.Ribbon>
                 </div>
               );
             })}

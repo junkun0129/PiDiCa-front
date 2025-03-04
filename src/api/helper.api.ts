@@ -1,4 +1,4 @@
-import { getCookie, resetAllCookies, setCookie } from "../helpers/util";
+import { getCookie, resetAllCookies } from "../helpers/util";
 export type ApiRes<DATA> = {
   result: string;
   data: DATA;

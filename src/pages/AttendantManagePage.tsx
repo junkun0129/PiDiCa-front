@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import AttendSpreadSheet from "../components/displays/AttendSpreadSheet";
-import { Button, DatePicker, message, Space, Typography } from "antd";
+import { useState } from "react";
+import { Button, message, Space, Typography } from "antd";
 import dayjs from "dayjs";
 import useSpreadsheet from "../hooks/useSpreadSheet";
 import useModal from "antd/es/modal/useModal";
+import ChangeSelectedMonthButton from "../components/buttons/ChangeSelectedMonthButton";
 const AttendantManagePage = () => {
   const [selectedDate, setselectedDate] = useState(
     dayjs(new Date()).format("YYYY-MM")
   );
 
   const { jssRef, attendStatus, handleSubmit } = useSpreadsheet(selectedDate);
-  const [modal, modalContextHolder] = useModal();
+  const [_, modalContextHolder] = useModal();
   const [popupMessage, messageContextHolder] = message.useMessage();
 
   const onSubmitClick = async () => {
@@ -23,28 +23,33 @@ const AttendantManagePage = () => {
     }
   };
   return (
-    <div>
+    <div className="w-full">
+      {messageContextHolder}
+      {modalContextHolder}
       <Space direction="horizontal" size={16}>
-        <Typography.Title level={5}>出勤表</Typography.Title>
-        <DatePicker
-          picker="month"
+        <Typography.Title level={3}>{selectedDate}の出勤表</Typography.Title>
+        <ChangeSelectedMonthButton
           value={dayjs(selectedDate)}
           onChange={(value) => {
             setselectedDate(dayjs(value).format("YYYY-MM"));
           }}
         />
+        <Typography.Title level={5}>
+          ステータス：{attendStatus}
+        </Typography.Title>
       </Space>
-      {messageContextHolder}
-      {modalContextHolder}
-      <div>
-        <Space direction="horizontal" size={16}>
-          <div>{attendStatus}</div>
-          <Button disabled={attendStatus === "提出済"} onClick={onSubmitClick}>
+      <Space className="flex flex-col items-start">
+        <div>
+          <Button
+            type="primary"
+            disabled={attendStatus === "提出済"}
+            onClick={onSubmitClick}
+          >
             保存
           </Button>
-        </Space>
+        </div>
         <div ref={jssRef} />
-      </div>
+      </Space>
     </div>
   );
 };
