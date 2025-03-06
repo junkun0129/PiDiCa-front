@@ -1,4 +1,4 @@
-import { Menu } from "antd";
+import { Menu, Space } from "antd";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../../providers/AppContextProvider";
@@ -13,6 +13,8 @@ import {
   SettingOutlined,
   CheckSquareOutlined,
 } from "@ant-design/icons";
+
+import logoimg from "../../assets/pidica_logo.svg";
 
 const {
   reportManage,
@@ -81,11 +83,24 @@ const AppSider = () => {
       className="h-screen shadow-lg"
     >
       <div
-        className={`flex justify-center items-center h-16 text-gray-200 text-xl ${
+        className={`flex justify-center items-center h-16  text-xl ${
           !isSidebarOpen ? "px-4" : "px-6"
         }`}
       >
-        {isSidebarOpen ? "PiDiCA" : "P"}
+        {isSidebarOpen ? (
+          <Space className="flex -ml-14">
+            <div
+              className="w-[35px] h-[35px] bg-cover"
+              style={{ backgroundImage: `url(${logoimg})` }}
+            ></div>
+            <div>PiDiCA</div>
+          </Space>
+        ) : (
+          <div
+            className="w-[35px] h-[35px] bg-cover"
+            style={{ backgroundImage: `url(${logoimg})` }}
+          ></div>
+        )}
       </div>
       <Menu
         onClick={({ key }) => onItemClick(key)}
