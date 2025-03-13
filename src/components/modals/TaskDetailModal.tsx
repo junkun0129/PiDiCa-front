@@ -213,7 +213,7 @@ const TaskDetailModal = ({
                       ?.project_name
                   : ""
               }
-              options={projectEntries.map((item, i) => ({
+              options={projectEntries.map((item) => ({
                 value: item.project_cd,
                 label: item.project_name,
               }))}
