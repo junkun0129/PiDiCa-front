@@ -3,11 +3,14 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { MyProvider } from "./providers/AppContextProvider.tsx";
+import AntdProvider from "./providers/AntdProvider.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <MyProvider>
-      <App />
+      <AntdProvider>
+        <App />
+      </AntdProvider>
     </MyProvider>
   </BrowserRouter>
 );

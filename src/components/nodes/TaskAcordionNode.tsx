@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getReportItemDetailApi, ReportItemView } from "../../api/task.api";
+import { Col, Divider, Row } from "antd";
+import dayjs from "dayjs";
 type TaskAcordionNodeProps = {
   isNodeActive: boolean;
   timeRange: string;
@@ -43,18 +45,50 @@ const TaskAcordionNode = ({
       setselectedItem(res.data);
     }
   };
+
   return (
     <div>
       {/* <p>task_cd: {task_cd}</p> */}
       {/* <p>ri_cd: {selectedItem.ri_cd}</p> */}
       {/* <p>report_cd: {selectedItem.report_cd}</p> */}
-      <p>開始時間: {selectedItem.ri_starttime}</p>
-      <p>終了時間: {selectedItem.ri_endtime}</p>
-      <p>計画: {selectedItem.ri_plan}</p>
-      <p>実行: {selectedItem.ri_do}</p>
-      <p>評価: {selectedItem.ri_check}</p>
-      <p>改善: {selectedItem.ri_action}</p>
-      <p>作成時刻: {selectedItem.created_at}</p>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>開始時間</Col>
+        <Col span={12}>{selectedItem.ri_starttime}時</Col>
+      </Row>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>終了時間</Col>
+        <Col span={12}>{selectedItem.ri_endtime}時</Col>
+      </Row>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>計画</Col>
+        <Col span={12}>{selectedItem.ri_plan}</Col>
+      </Row>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>実行</Col>
+        <Col span={12}>{selectedItem.ri_do}</Col>
+      </Row>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>評価</Col>
+        <Col span={12}>{selectedItem.ri_check}</Col>
+      </Row>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>改善</Col>
+        <Col span={12}>{selectedItem.ri_action}</Col>
+      </Row>
+      <Divider className="my-2" />
+      <Row>
+        <Col span={12}>作成時刻</Col>
+        <Col span={12}>
+          {dayjs(selectedItem.created_at).format("YYYY年M月D日")}
+        </Col>
+      </Row>
+      <Divider className="my-2" />
     </div>
   );
 };

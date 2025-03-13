@@ -1,12 +1,12 @@
 import { fetchRequest } from "./helper.api";
 
-type getTaskApiReq = {
+type GetTaskListApiReq = {
   offset: number;
   pagination: number;
   sort: string;
   project: string;
 };
-type getTaskApiRes = {
+type GetTaskListApiRes = {
   result: string;
   total: string;
   data: {
@@ -34,11 +34,35 @@ export type ReportItemView = {
 };
 
 export const getTaskListApi = async (
-  req: getTaskApiReq
-): Promise<getTaskApiRes> => {
+  req: GetTaskListApiReq
+): Promise<GetTaskListApiRes> => {
   const url =
     "/task/list" +
     `?offset=${req.offset}&pagination=${req.pagination}&sort=${req.sort}&project=${req.project}`;
+  const response = await fetchRequest(url, "get");
+  return response;
+};
+
+type GetTaskApiReq = {
+  task_cd: string;
+};
+
+type GetTaskApiRes = {
+  result: string;
+  data: {
+    task_cd: string;
+    task_name: string;
+    task_detail: string;
+    task_status: string;
+    project_cd: string;
+    created_at: string;
+    updated_at: string;
+  };
+};
+export const getTaskApi = async (
+  req: GetTaskApiReq
+): Promise<GetTaskApiRes> => {
+  const url = `/task/get?task_cd=${req.task_cd}`;
   const response = await fetchRequest(url, "get");
   return response;
 };
@@ -113,5 +137,26 @@ export const getReportItemDetailApi = async (
 ): Promise<GetReportItemDetailRes> => {
   const url = `/task/items/detail?task_cd=${req.task_cd}&date=${req.date}&starttime=${req.starttime}&endtime=${req.endtime}`;
   const response = await fetchRequest(url, "get");
+  return response;
+};
+
+export type UpdateTaskReq = {
+  body: {
+    task_cd: string;
+    task_name: string;
+    project_cd: string;
+    task_detail: string;
+    task_status: string;
+  };
+};
+
+export type UpdateTaskRes = {
+  result: string;
+};
+export const updateTaskApi = async (
+  req: UpdateTaskReq
+): Promise<UpdateTaskRes> => {
+  const url = `/task/update`;
+  const response = await fetchRequest(url, "post", req.body);
   return response;
 };

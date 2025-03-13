@@ -95,23 +95,7 @@ const TaskManagePage = () => {
   const [selectedRowKeys, setselectedRowKeys] = useState<string[]>([]);
   const [total, settotal] = useState(0);
 
-  const [selectedTask, setselectedTask] = useState<{
-    task_cd: string;
-    task_name: string;
-    created_at: string;
-    updated_at: string;
-    project_name: string;
-    status: string;
-    task_detail: string;
-  }>({
-    task_cd: "",
-    task_name: "",
-    created_at: "",
-    updated_at: "",
-    project_name: "",
-    status: "",
-    task_detail: "",
-  });
+  const [selectedTaskCd, setselectedTaskCd] = useState("");
   const [isModalOpen, setisModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [tabItems] = useState([
@@ -151,38 +135,53 @@ const TaskManagePage = () => {
       title: "タスク作成",
       content: (
         <div>
-          <Space direction="vertical">
-            <Form form={form}>
-              <Form.Item required name="task_name">
-                <Input name="task_name" />
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <Form clearOnDestroy={true} form={form} style={{ width: "100%" }}>
+              <Form.Item
+                label="タスク名"
+                name="task_name"
+                required={true}
+                labelCol={{ span: 24 }}
+              >
+                <Input name="task_name" style={{ width: "100%" }} />
               </Form.Item>
-              <Form.Item name="project_cd">
-                <Select>
-                  {entries.map((item) => {
-                    return (
-                      <Select.Option
-                        key={item.project_cd}
-                        value={item.project_cd}
-                      >
-                        {item.project_name}
-                      </Select.Option>
-                    );
-                  })}
+              <Form.Item
+                label="所属プロジェクト"
+                name="project_cd"
+                labelCol={{ span: 24 }}
+              >
+                <Select style={{ width: "100%" }}>
+                  {entries.map((item) => (
+                    <Select.Option
+                      key={item.project_cd}
+                      value={item.project_cd}
+                    >
+                      {item.project_name}
+                    </Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
-              <Form.Item>
-                <TextArea name="task_detail" />
+              <Form.Item
+                label="タスクの詳細"
+                name="task_detail"
+                labelCol={{ span: 24 }}
+              >
+                <TextArea name="task_detail" style={{ width: "100%" }} />
               </Form.Item>
             </Form>
           </Space>
         </div>
       ),
       onOk: async (close) => {
+        const task_name = form.getFieldValue("task_name");
+        const task_detail = form.getFieldValue("task_detail");
+        const project_cd = form.getFieldValue("project_cd");
+        if (!task_name) return;
         await createTask({
           body: {
-            task_name: form.getFieldValue("task_name"),
-            project_cd: form.getFieldValue("project_cd") ?? null,
-            task_detail: form.getFieldValue("task_detail"),
+            task_name,
+            project_cd: project_cd ?? null,
+            task_detail: task_detail,
             task_status: "1",
           },
         });
@@ -283,17 +282,8 @@ const TaskManagePage = () => {
         columns={columns}
         onRow={(record) => ({
           onClick: () => {
-            console.log("Row clicked:", record);
             setisModalOpen(true);
-            setselectedTask({
-              task_cd: record.key,
-              task_name: record.name,
-              created_at: record.created,
-              updated_at: record.updated,
-              project_name: record.project_name,
-              status: record.status,
-              task_detail: record.detail,
-            });
+            setselectedTaskCd(record.key);
           },
         })}
         rowSelection={{
@@ -318,18 +308,18 @@ const TaskManagePage = () => {
           open: isModalOpen,
           onCancel: () => {
             setisModalOpen(false);
-            setselectedTask({
-              task_cd: "",
-              task_name: "",
-              created_at: "",
-              updated_at: "",
-              project_name: "",
-              status: "",
-              task_detail: "",
-            });
+            setselectedTaskCd("");
           },
         }}
-        selectedTask={selectedTask}
+        selectedCd={selectedTaskCd}
+        updateTable={() =>
+          updateTaskList({
+            offset,
+            pagination,
+            sort,
+            project: selectedProjects,
+          })
+        }
       />
     </Space>
   );

@@ -32,6 +32,11 @@ export const TASK_STATUS = {
   "2": "進行中",
   "3": "完了済",
 };
+export const TASK_STATUS_REVERSE = {
+  未着手: "1",
+  進行中: "2",
+  完了済: "3",
+};
 
 export const REPORT_MODE = {
   PLAN: "0",
