@@ -56,6 +56,12 @@ export type ReportItemView = {
   ri_endtime: string;
   tasks: {
     task_name: string;
+    ri_starttime: string;
+    ri_endtime: string;
+    ri_action: string;
+    ri_check: string;
+    ri_do: string;
+    ri_plan: string;
   };
 };
 export type ReportView = {

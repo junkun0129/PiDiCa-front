@@ -43,6 +43,10 @@ export const REPORT_MODE = {
   ACTION: "1",
 };
 
+export const REPORT_MODE_FROM_BACK = {
+  zero: "0",
+  one: "1",
+};
 export const QURERY_PARAM = {
   DATE: "date",
   MODE: "mode",
